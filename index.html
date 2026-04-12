@@ -1,0 +1,1365 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stock Signal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    :root {
+      --blue: #1a56db;
+      --navy: #0f1a2e;
+      --cream: #f8f5f0;
+      --white: #ffffff;
+      --text: #0f1a2e;
+      --muted: #64748b;
+      --line: #e2ddd6;
+      --soft-blue: #eef4ff;
+      --accent: #c9963a;
+      --positive: #0d6e3f;
+      --negative: #b91c1c;
+      --signal-bg: #f9f7f4;
+      --warning-bg: #fff7ed;
+      --warning-text: #9a3412;
+      --shadow-soft: 0 14px 34px rgba(15, 26, 46, 0.06);
+      --shadow-card: 0 10px 24px rgba(15, 26, 46, 0.05);
+      --shadow-hover: 0 20px 40px rgba(15, 26, 46, 0.10);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(26, 86, 219, 0.04), transparent 30%),
+        radial-gradient(circle at bottom right, rgba(201, 150, 58, 0.03), transparent 30%),
+        linear-gradient(to bottom, #fbfaf7 0%, var(--cream) 100%);
+      color: var(--text);
+      font-size: 16px;
+      line-height: 1.65;
+      min-height: 100vh;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .animate-up {
+      animation: fadeUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    .stagger-1 { animation-delay: 0.05s; }
+    .stagger-2 { animation-delay: 0.1s; }
+    .stagger-3 { animation-delay: 0.15s; }
+    .stagger-4 { animation-delay: 0.2s; }
+    .stagger-5 { animation-delay: 0.25s; }
+    .stagger-6 { animation-delay: 0.3s; }
+
+    /* ── Navbar ─────────────────────────────────────── */
+
+    .navbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(248, 245, 240, 0.88);
+      backdrop-filter: blur(16px) saturate(1.4);
+      -webkit-backdrop-filter: blur(16px) saturate(1.4);
+      border-bottom: 1px solid rgba(226, 221, 214, 0.7);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 32px;
+      gap: 16px;
+      transition: box-shadow 0.3s ease;
+    }
+
+    .navbar.scrolled {
+      box-shadow: 0 4px 24px rgba(15, 26, 46, 0.06);
+    }
+
+    .nav-left {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      min-width: 0;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 18px;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.01em;
+      transition: color 0.15s ease;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .nav-links a::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      width: 0;
+      height: 1.5px;
+      background: var(--blue);
+      transition: width 0.2s ease;
+    }
+
+    .nav-links a:hover { color: var(--navy); }
+    .nav-links a:hover::after { width: 100%; }
+
+    .stock-pills {
+      display: flex;
+      gap: 5px;
+    }
+
+    .pill {
+      padding: 5px 13px;
+      border: 1px solid var(--line);
+      border-radius: 99px;
+      background: rgba(255, 255, 255, 0.8);
+      font-size: 12px;
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+      letter-spacing: 0.02em;
+    }
+
+    .pill:hover {
+      background: var(--navy);
+      color: var(--white);
+      border-color: var(--navy);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(15, 26, 46, 0.15);
+    }
+
+    .pill.active {
+      background: var(--navy);
+      color: var(--white);
+      border-color: var(--navy);
+    }
+
+    .nav-search {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .nav-search input {
+      padding: 9px 16px;
+      border: 1px solid var(--line);
+      border-radius: 99px;
+      outline: none;
+      min-width: 220px;
+      background: rgba(255, 255, 255, 0.9);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      color: var(--text);
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, min-width 0.3s ease;
+    }
+
+    .nav-search input:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 4px rgba(26, 86, 219, 0.07);
+      min-width: 260px;
+    }
+
+    .nav-search input::placeholder {
+      color: #94a3b8;
+    }
+
+    .nav-search button {
+      border: none;
+      background: linear-gradient(135deg, var(--navy), #1e3a5f);
+      color: white;
+      border-radius: 99px;
+      padding: 9px 20px;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+      white-space: nowrap;
+    }
+
+    .nav-search button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(15, 26, 46, 0.2);
+    }
+
+    .nav-search button:active {
+      transform: translateY(0);
+    }
+
+    /* ── Container & Status ────────────────────────── */
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 36px 24px 80px;
+    }
+
+    .status-banner {
+      display: none;
+      margin-bottom: 16px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      border: 1px solid #fed7aa;
+      background: var(--warning-bg);
+      color: var(--warning-text);
+      font-size: 13px;
+      font-weight: 500;
+      box-shadow: var(--shadow-card);
+      animation: fadeUp 0.3s ease both;
+    }
+
+    .status-banner.visible {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status-banner::before {
+      content: '⚠';
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .status-banner.loading {
+      border-color: #bfdbfe;
+      background: #eff6ff;
+      color: #1e40af;
+    }
+
+    .status-banner.loading::before {
+      content: '';
+      width: 14px;
+      height: 14px;
+      border: 2px solid #93c5fd;
+      border-top-color: #1e40af;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+
+    /* ── Empty state ───────────────────────────────── */
+
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 100px 24px;
+      animation: fadeUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    .empty-state-icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 16px;
+      background: var(--soft-blue);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .empty-state-icon svg {
+      width: 28px;
+      height: 28px;
+      stroke: var(--blue);
+      fill: none;
+      stroke-width: 1.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .empty-state h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 28px;
+      color: var(--navy);
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+    }
+
+    .empty-state p {
+      color: var(--muted);
+      font-size: 15px;
+      max-width: 400px;
+      line-height: 1.6;
+    }
+
+    .empty-state .supported-tickers {
+      display: flex;
+      gap: 6px;
+      margin-top: 20px;
+    }
+
+    .empty-state .supported-tickers button {
+      padding: 6px 16px;
+      border: 1px solid var(--line);
+      border-radius: 99px;
+      background: rgba(255, 255, 255, 0.85);
+      font-size: 12px;
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .empty-state .supported-tickers button:hover {
+      background: var(--navy);
+      color: var(--white);
+      border-color: var(--navy);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(15, 26, 46, 0.15);
+    }
+
+    /* ── Hero ───────────────────────────────────────── */
+
+    .hero {
+      margin-bottom: 32px;
+      padding: 24px 0;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .hero-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 2.5px;
+      color: var(--blue);
+      text-transform: uppercase;
+    }
+
+    .hero h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 52px;
+      line-height: 1;
+      color: var(--navy);
+      letter-spacing: -1.5px;
+    }
+
+    .hero h1 .ticker {
+      color: var(--muted);
+      font-size: 28px;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 400;
+      letter-spacing: 0.02em;
+      display: inline-block;
+      margin-left: 12px;
+      vertical-align: middle;
+      opacity: 0.6;
+    }
+
+    .hero-tagline {
+      color: var(--muted);
+      font-size: 14px;
+      max-width: 520px;
+      margin-top: 10px;
+      line-height: 1.55;
+    }
+
+    .hero-right {
+      text-align: right;
+    }
+
+    .current-price {
+      font-family: 'DM Serif Display', serif;
+      font-size: 40px;
+      color: var(--navy);
+      line-height: 1;
+    }
+
+    .price-change {
+      font-size: 13px;
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--positive);
+      margin-top: 4px;
+    }
+
+    .price-change.negative {
+      color: var(--negative);
+    }
+
+    .price-ts {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 6px;
+      opacity: 0.7;
+    }
+
+    /* ── Grid layouts ──────────────────────────────── */
+
+    .top-grid {
+      display: grid;
+      grid-template-columns: 1.9fr 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .card,
+    .signal-section,
+    .sources-section {
+      background: rgba(255, 255, 255, 0.95);
+      border: 1px solid rgba(226, 221, 214, 0.85);
+      border-radius: 18px;
+      box-shadow: var(--shadow-card);
+      transition: box-shadow 0.3s ease, transform 0.3s ease;
+    }
+
+    .card:hover,
+    .signal-section:hover {
+      box-shadow: var(--shadow-hover);
+      transform: translateY(-2px);
+    }
+
+    .card {
+      padding: 22px;
+    }
+
+    .card-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.8px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 3px;
+    }
+
+    .card-subtitle {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 18px;
+      opacity: 0.7;
+    }
+
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+
+    .chart-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 11px;
+      border-radius: 999px;
+      background: var(--soft-blue);
+      color: var(--blue);
+      font-size: 11px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: 0.3px;
+    }
+
+    .chart-badge-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .chart-wrap {
+      position: relative;
+      width: 100%;
+      height: 250px;
+      margin-top: 6px;
+    }
+
+    #stockChart {
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    .metric {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+      transition: background 0.15s ease;
+    }
+
+    .metric:hover {
+      background: rgba(0, 0, 0, 0.01);
+      margin: 0 -8px;
+      padding: 10px 8px;
+      border-radius: 8px;
+    }
+
+    .metric:last-child {
+      border-bottom: none;
+    }
+
+    .metric-label {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .metric-value {
+      font-size: 13px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--navy);
+      text-align: right;
+    }
+
+    .metric-value.up { color: var(--positive); }
+    .metric-value.down { color: var(--negative); }
+
+    /* ── Signal sections ───────────────────────────── */
+
+    .sections-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .signal-section {
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .signal-section::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 3px;
+      height: 0;
+      background: var(--blue);
+      transition: height 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+      border-radius: 0 0 3px 0;
+    }
+
+    .signal-section:hover::before {
+      height: 100%;
+    }
+
+    .signal-section.full-width {
+      grid-column: 1 / -1;
+    }
+
+    .section-tag {
+      display: inline-block;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 2.2px;
+      text-transform: uppercase;
+      color: var(--blue);
+      background: var(--soft-blue);
+      padding: 4px 10px;
+      border-radius: 6px;
+      margin-bottom: 12px;
+    }
+
+    .section-tag.amber { color: #92400e; background: #fef3c7; }
+    .section-tag.green { color: #065f46; background: #d1fae5; }
+
+    .signal-section h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 24px;
+      color: var(--navy);
+      margin-bottom: 12px;
+      letter-spacing: -0.4px;
+      line-height: 1.2;
+    }
+
+    .signal-section p {
+      color: #475569;
+      font-size: 14px;
+      line-height: 1.75;
+    }
+
+    .monitoring-cols {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .monitor-item h3 {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: var(--muted);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .monitor-item h3::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .monitor-item:first-child h3::before { background: var(--accent); }
+    .monitor-item:last-child h3::before { background: var(--blue); }
+
+    .monitor-item p {
+      font-size: 14px;
+      color: #475569;
+      line-height: 1.7;
+    }
+
+    /* ── Conclusion ─────────────────────────────────── */
+
+    .conclusion-section {
+      background: linear-gradient(135deg, var(--navy) 0%, #16294a 60%, #1a3050 100%);
+      border-radius: 18px;
+      padding: 30px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-soft);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .conclusion-section::after {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -20%;
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, rgba(26, 86, 219, 0.1), transparent 70%);
+      pointer-events: none;
+    }
+
+    .conclusion-section .section-tag {
+      color: #93c5fd;
+      background: rgba(147, 197, 253, 0.1);
+    }
+
+    .conclusion-section h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 26px;
+      color: var(--white);
+      margin-bottom: 12px;
+      letter-spacing: -0.4px;
+      position: relative;
+    }
+
+    .conclusion-section p {
+      color: #cbd5e1;
+      font-size: 14px;
+      line-height: 1.8;
+      position: relative;
+    }
+
+    /* ── Sources ────────────────────────────────────── */
+
+    .sources-section {
+      padding: 22px;
+    }
+
+    .sources-section h2 {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+
+    .sources-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 8px;
+    }
+
+    .source-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      text-decoration: none;
+      background: rgba(255, 255, 255, 0.9);
+      transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .source-item:hover {
+      border-color: var(--blue);
+      background: var(--soft-blue);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(26, 86, 219, 0.08);
+    }
+
+    .source-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: var(--signal-bg);
+      border: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+
+    .source-text p {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--navy);
+      line-height: 1.3;
+    }
+
+    .source-text span {
+      font-size: 10px;
+      color: var(--muted);
+    }
+
+    .page-footer {
+      text-align: center;
+      padding: 24px;
+      font-size: 11px;
+      color: var(--muted);
+      opacity: 0.6;
+      letter-spacing: 0.02em;
+    }
+
+    .content-fade {
+      transition: opacity 0.2s ease;
+    }
+
+    .content-fade.switching {
+      opacity: 0.3;
+      pointer-events: none;
+    }
+
+    /* ── Responsive ─────────────────────────────────── */
+
+    @media (max-width: 900px) {
+      .top-grid,
+      .sections-grid,
+      .monitoring-cols {
+        grid-template-columns: 1fr;
+      }
+
+      .nav-links,
+      .stock-pills {
+        display: none;
+      }
+
+      .hero h1 { font-size: 36px; }
+      .hero h1 .ticker { font-size: 20px; }
+      .current-price { font-size: 32px; }
+    }
+
+    @media (max-width: 640px) {
+      .navbar {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 10px 16px;
+      }
+
+      .nav-left,
+      .nav-search,
+      .hero {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .nav-search input,
+      .nav-search button {
+        width: 100%;
+      }
+
+      .nav-search input { min-width: 0; }
+      .nav-search input:focus { min-width: 0; }
+
+      .hero-right { text-align: left; }
+      .container { padding: 20px 14px 60px; }
+      .chart-wrap { height: 200px; }
+
+      .signal-section h2 { font-size: 22px; }
+      .conclusion-section h2 { font-size: 22px; }
+
+      .card,
+      .signal-section { padding: 18px; }
+
+      .empty-state { padding: 60px 16px; }
+      .empty-state h2 { font-size: 24px; }
+    }
+  </style>
+</head>
+
+<body>
+  <nav class="navbar" id="navbar">
+    <div class="nav-left">
+      <div class="nav-links">
+        <a onclick="scrollToSection('what-matters')">What matters now</a>
+        <a onclick="scrollToSection('value-drivers')">Value drivers</a>
+        <a onclick="scrollToSection('monitoring')">Monitoring</a>
+        <a onclick="scrollToSection('conclusion')">Conclusion</a>
+      </div>
+
+      <div class="stock-pills">
+        <button class="pill" data-ticker="NVDA" onclick="loadStock('NVDA')">NVDA</button>
+        <button class="pill" data-ticker="INVE-B" onclick="loadStock('INVE-B')">INVE-B</button>
+        <button class="pill" data-ticker="NOVO-B" onclick="loadStock('NOVO-B')">NOVO-B</button>
+      </div>
+    </div>
+
+    <div class="nav-search">
+      <input type="text" id="searchInput" placeholder="Search company or ticker…" aria-label="Search company or ticker" />
+      <button type="button" onclick="handleSearch()">Analyze</button>
+    </div>
+  </nav>
+
+  <main class="container">
+    <div id="statusBanner" class="status-banner" role="status" aria-live="polite"></div>
+
+    <div id="emptyState" class="empty-state">
+      <div class="empty-state-icon">
+        <svg viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      </div>
+      <h2>Search for a company</h2>
+      <p>Enter a company name or ticker above to generate a signal-based analysis.</p>
+      <div class="supported-tickers">
+        <button onclick="loadStock('NVDA')">NVDA</button>
+        <button onclick="loadStock('INVE-B')">INVE-B</button>
+        <button onclick="loadStock('NOVO-B')">NOVO-B</button>
+      </div>
+    </div>
+
+    <div class="content-fade" id="contentWrap" style="display:none;">
+      <header class="hero animate-up">
+        <div class="hero-left">
+          <div class="hero-meta">
+            <p class="label">Stock analysis</p>
+          </div>
+          <h1><span id="companyName"></span> <span class="ticker" id="tickerSymbol"></span></h1>
+          <p class="hero-tagline">Signal-based analysis built from verified company events and financial data.</p>
+        </div>
+        <div class="hero-right">
+          <div class="current-price" id="currentPrice"></div>
+          <div class="price-change" id="priceChange"></div>
+          <div class="price-ts" id="priceTs"></div>
+        </div>
+      </header>
+
+      <div class="top-grid">
+        <div class="card animate-up stagger-1">
+          <div class="chart-header">
+            <div>
+              <div class="card-title">EPS trend</div>
+              <div class="card-subtitle" id="chartSubtitle"></div>
+            </div>
+            <div class="chart-badge">
+              <span class="chart-badge-dot"></span>
+              <span id="chartBadgeText">EPS</span>
+            </div>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="stockChart"></canvas>
+          </div>
+        </div>
+
+        <div class="card animate-up stagger-2">
+          <div class="card-title">Financial ratios</div>
+          <div id="metricsContainer" style="margin-top: 12px;">
+            <div class="metric"><span class="metric-label">P/E</span><span class="metric-value" id="m-pe"></span></div>
+            <div class="metric"><span class="metric-label">Forward P/E</span><span class="metric-value" id="m-fpe"></span></div>
+            <div class="metric"><span class="metric-label">Revenue growth</span><span class="metric-value" id="m-rev"></span></div>
+            <div class="metric"><span class="metric-label">Operating margin</span><span class="metric-value" id="m-margin"></span></div>
+            <div class="metric"><span class="metric-label">EPS (actual)</span><span class="metric-value" id="m-eps"></span></div>
+            <div class="metric"><span class="metric-label">Market Cap</span><span class="metric-value" id="m-cap"></span></div>
+            <div class="metric"><span class="metric-label">Free cash flow</span><span class="metric-value" id="m-fcf"></span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sections-grid" id="what-matters">
+        <div class="signal-section full-width animate-up stagger-3">
+          <div class="section-tag">What matters now</div>
+          <h2 id="wm-title"></h2>
+          <p id="wm-text"></p>
+        </div>
+      </div>
+
+      <div class="sections-grid">
+        <div class="signal-section animate-up stagger-4" id="value-drivers">
+          <div class="section-tag amber">Drivers</div>
+          <h2>What drives company value</h2>
+          <p id="drivers-text"></p>
+        </div>
+
+        <div class="signal-section animate-up stagger-5" id="monitoring">
+          <div class="section-tag green">Monitoring</div>
+          <h2>What to watch going forward</h2>
+          <div class="monitoring-cols">
+            <div class="monitor-item">
+              <h3>Short term · 0–90 days</h3>
+              <p id="mon-short"></p>
+            </div>
+            <div class="monitor-item">
+              <h3>Long term · 90+ days</h3>
+              <p id="mon-long"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="conclusion-section animate-up stagger-6" id="conclusion">
+        <div class="section-tag">Conclusion</div>
+        <h2 id="conclusionTitle"></h2>
+        <p id="conclusionText"></p>
+      </div>
+
+      <div class="sources-section animate-up">
+        <h2>Sources</h2>
+        <div class="sources-grid" id="sourcesGrid"></div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="page-footer">
+    Data is historical and not updated in real time · Does not constitute investment advice
+  </footer>
+
+  <script>
+    const stockData = {
+      'NVDA': {
+        name: 'NVIDIA',
+        ticker: 'NVDA',
+        price: '$114.50',
+        change: '▲ +2.30 (+2.1%)',
+        changeClass: '',
+        ts: 'Historical data · Q1 2025 · Not updated live',
+        epsLabels: ['Q1 FY24', 'Q2 FY24', 'Q3 FY24', 'Q4 FY24', 'Q1 FY25', 'Q2 FY25', 'Q3 FY25', 'Q4 FY25'],
+        epsData: [0.11, 0.27, 0.40, 0.49, 0.61, 0.68, 0.81, 0.89],
+        epsUnits: '$',
+        metrics: {
+          pe: '39', fpe: '35',
+          rev: '+114%', revClass: 'up',
+          margin: '63%',
+          eps: '$0.89 ▲', epsClass: 'up',
+          cap: '$2.7T',
+          fcf: '$60B', fcfClass: 'up'
+        },
+        wm: {
+          title: 'Q4 FY2025 earnings beat expectations — guidance raised',
+          text: 'NVIDIA reported Q4 FY2025 (Jan 2025) with revenue of $39.3B vs estimated $38.5B, and non-GAAP EPS of $0.89 vs estimated $0.84. The Data Center segment generated $35.6B. The company simultaneously raised its Q1 FY2026 guidance to $43.0B — a double beat on both results and outlook.'
+        },
+        drivers: 'Company value is driven by continued demand for GPUs for AI infrastructure and data centers. The Data Center segment accounted for 90% of revenue in FY2025. Operating margin of 55% (GAAP) and free cash flow of ~$60B in FY2025 show growth with maintained profitability. The Blackwell architecture launch is the next value driver.',
+        monShort: 'Next quarterly report (Q1 FY2026) and guidance is the key focus. Delivery capacity and margin development for the Blackwell generation is continuously priced by the market.',
+        monLong: 'The long-term case depends on whether the AI adoption curve maintains its pace. Export restrictions on GPUs to China and competition from AMD MI-series and custom chips from hyperscalers are key risks.',
+        conclusion: {
+          title: 'Strong signal picture with a highly valued case',
+          text: 'The signal picture is predominantly positive based on Q4 FY2025 — a double beat on earnings and guidance. The dominant direction is bullish, driven by verified fundamental data. Risk: High valuation (P/E ~52x) means the case is sensitive to any negative revision in guidance, export restrictions, or margin deterioration.'
+        },
+        sources: [
+          { short: 'IR', title: 'Q4 FY2025 Earnings Report', subtitle: 'Investor Relations · NVIDIA', href: 'https://investor.nvidia.com/' },
+          { short: 'YF', title: 'Financial data & key ratios', subtitle: 'Yahoo Finance', href: 'https://finance.yahoo.com/' },
+          { short: 'Rtr', title: 'News source', subtitle: 'Reuters', href: 'https://www.reuters.com/' }
+        ]
+      },
+
+      'INVE-B': {
+        name: 'Investor B',
+        ticker: 'INVE-B',
+        price: 'SEK 254.80',
+        change: '▲ +3.40 (+1.4%)',
+        changeClass: '',
+        ts: 'Historical data · Q1 2025 · Not updated live',
+        epsLabels: ['Q1 2022', 'Q2 2022', 'Q3 2022', 'Q4 2022', 'Q1 2023', 'Q2 2023', 'Q3 2023', 'Q4 2023'],
+        epsData: [3.2, 3.8, 4.1, 4.7, 5.3, 5.9, 6.8, 7.4],
+        epsUnits: 'SEK',
+        metrics: {
+          pe: '14.2', fpe: '13.1',
+          rev: '+6.2%', revClass: 'up',
+          margin: '38%',
+          eps: 'SEK 17.90 ▲', epsClass: 'up',
+          cap: 'SEK 610B',
+          fcf: 'SEK 19B', fcfClass: 'up'
+        },
+        wm: {
+          title: 'Net asset value rises driven by portfolio companies',
+          text: 'Investor B reported an increased net asset value per share, primarily driven by value growth in Atlas Copco and ABB. No negative signals were identified in the latest report. The company historically trades at a premium valuation relative to net asset value, reflecting confidence in the Wallenberg sphere\'s capital allocation.'
+        },
+        drivers: 'Company value is driven by the operational performance of portfolio companies, particularly in industry and technology. Atlas Copco and ABB are major positions and their margins directly impact Investor via net asset value. Low leverage provides room for capital allocation that can enhance long-term value creation.',
+        monShort: 'Portfolio company quarterly results are the key focus. Potential acquisitions or divestments can quickly change how net asset value is interpreted in the short term.',
+        monLong: 'The long-term case rests on the ability to allocate capital to the right sectors. Interest rates and the industrial cycle are macro factors directly linked to portfolio value.',
+        conclusion: {
+          title: 'Stable signal picture with limited noise',
+          text: 'The signal picture is balanced positive — net asset value is increasing and no negative events have been identified recently. The dominant direction is cautiously bullish based on portfolio performance. Risk: A broad industrial downturn could impact multiple portfolio companies simultaneously.'
+        },
+        sources: [
+          { short: 'IR', title: 'Interim report', subtitle: 'Investor Relations · Investor AB', href: 'https://www.investorab.com/' },
+          { short: 'YF', title: 'Financial data & key ratios', subtitle: 'Yahoo Finance', href: 'https://finance.yahoo.com/' },
+          { short: 'Nas', title: 'Market data', subtitle: 'Nasdaq Stockholm', href: 'https://www.nasdaq.com/' }
+        ]
+      },
+
+      'NOVO-B': {
+        name: 'Novo Nordisk',
+        ticker: 'NOVO B',
+        price: 'DKK 648.00',
+        change: '▼ -14.20 (-2.1%)',
+        changeClass: 'negative',
+        ts: 'Historical data · Q1 2025 · Not updated live',
+        epsLabels: ['Q1 2023', 'Q2 2023', 'Q3 2023', 'Q4 2023', 'Q1 2024', 'Q2 2024', 'Q3 2024', 'Q4 2024'],
+        epsData: [11.2, 12.4, 13.1, 14.6, 15.7, 16.3, 15.1, 13.9],
+        epsUnits: 'DKK',
+        metrics: {
+          pe: '22.1', fpe: '19.4',
+          rev: '+25%', revClass: 'up',
+          margin: '45%',
+          eps: 'DKK 27.44 ▼', epsClass: 'down',
+          cap: 'DKK 1.55T',
+          fcf: 'DKK 70B', fcfClass: 'up'
+        },
+        wm: {
+          title: 'CagriSema misses primary endpoint — stock fell sharply',
+          text: 'Novo Nordisk announced in December 2024 that the CagriSema combination treatment did not reach the primary endpoint in the REDEFINE study. The stock fell ~20% on the announcement day. The case now relies heavily on existing products Ozempic and Wegovy, while pipeline confidence has been revised down and the competitive landscape against Eli Lilly\'s Zepbound has sharpened.'
+        },
+        drivers: 'Company value is still driven by Ozempic and Wegovy, with stable and strong demand in the global GLP-1 segment. FY2024 revenue grew ~25%. However, pipeline confidence has weakened significantly after the CagriSema outcome, and the competitive landscape against Eli Lilly is sharper. Existing cash flows are strong but the market is pricing down optionality.',
+        monShort: 'The next clinical data readout and FY2025 guidance are critical. Wegovy volume trends in the US and potential pricing decisions under the IRA framework are key short-term factors.',
+        monLong: 'The long-term case depends on whether Novo Nordisk can deliver next-generation weight loss medication and rebuild pipeline confidence. Competition from Eli Lilly and oral GLP-1 candidates is the structural risk.',
+        conclusion: {
+          title: 'Mixed signal picture with clear downside risk',
+          text: 'The signal picture is mixed — a confirmed negative pipeline outcome (CagriSema, Dec 2024) weighs heavily against continued strong cash flows from existing products. The dominant direction is cautiously bearish. Risk: Further negative pipeline readouts or pricing pressure could trigger additional re-valuation.'
+        },
+        sources: [
+          { short: 'PR', title: 'CagriSema REDEFINE outcome', subtitle: 'Novo Nordisk press release', href: 'https://www.novonordisk.com/' },
+          { short: 'YF', title: 'Financial data & key ratios', subtitle: 'Yahoo Finance', href: 'https://finance.yahoo.com/' },
+          { short: 'Rtr', title: 'News source', subtitle: 'Reuters', href: 'https://www.reuters.com/' }
+        ]
+      }
+    };
+
+    // ============================================================
+    // BACKEND INTEGRATION
+    // ============================================================
+    const CONFIG = {
+      API_BASE_URL: 'http://localhost:8000',
+      USE_BACKEND: true,
+    };
+
+    const api = {
+      async getStock(ticker) {
+        const res = await fetch(`${CONFIG.API_BASE_URL}/api/stock/${encodeURIComponent(ticker)}`);
+        if (!res.ok) throw new Error(`Backend responded with ${res.status}`);
+        return res.json();
+      },
+      async search(query) {
+        const res = await fetch(`${CONFIG.API_BASE_URL}/api/search?q=${encodeURIComponent(query)}`);
+        if (!res.ok) throw new Error(`Backend responded with ${res.status}`);
+        return res.json();
+      },
+    };
+
+    async function fetchStockData(ticker) {
+      if (!CONFIG.USE_BACKEND) return stockData[ticker] || null;
+      try {
+        return await api.getStock(ticker);
+      } catch (err) {
+        console.warn('Backend unavailable, falling back to static data.', err);
+        return stockData[ticker] || null;
+      }
+    }
+
+    async function fetchSearchData(query) {
+      if (!CONFIG.USE_BACKEND) {
+        const normalized = normalizeSearchValue(query);
+        const map = { 'NVDA': 'NVDA', 'NVIDIA': 'NVDA', 'INVE-B': 'INVE-B', 'INVESTOR B': 'INVE-B', 'NOVO B': 'NOVO-B', 'NOVO-B': 'NOVO-B' };
+        const hit = map[normalized];
+        return hit ? stockData[hit] : null;
+      }
+      try {
+        return await api.search(query);
+      } catch (err) {
+        console.warn('Backend unavailable.', err);
+        return null;
+      }
+    }
+    // ============================================================
+
+    let currentChart = null;
+
+    window.addEventListener('scroll', () => {
+      document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 8);
+    }, { passive: true });
+
+    function scrollToSection(id) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const elCenter = rect.top + rect.height / 2;
+      const viewCenter = window.innerHeight / 2;
+      const scrollTarget = window.scrollY + elCenter - viewCenter;
+      window.scrollTo({ top: Math.max(0, scrollTarget), behavior: 'smooth' });
+    }
+
+    function setStatus(message = '', type = 'warning') {
+      const banner = document.getElementById('statusBanner');
+      banner.textContent = message;
+      banner.className = `status-banner ${type}`;
+      banner.classList.toggle('visible', Boolean(message));
+    }
+
+    function renderSources(sources) {
+      const grid = document.getElementById('sourcesGrid');
+      grid.innerHTML = '';
+      sources.forEach((source) => {
+        const a = document.createElement('a');
+        a.className = 'source-item';
+        a.href = source.href;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        a.innerHTML = `
+          <div class="source-icon">${source.short}</div>
+          <div class="source-text">
+            <p>${source.title}</p>
+            <span>${source.subtitle}</span>
+          </div>
+        `;
+        grid.appendChild(a);
+      });
+    }
+
+    function updateMetric(id, value, extraClass = '') {
+      const el = document.getElementById(id);
+      el.textContent = value;
+      el.className = `metric-value ${extraClass}`.trim();
+    }
+
+    function showAnalysis() {
+      document.getElementById('emptyState').style.display = 'none';
+      document.getElementById('contentWrap').style.display = '';
+    }
+
+    function renderStock(d) {
+      const wrap = document.getElementById('contentWrap');
+      const isFirstLoad = wrap.style.display === 'none';
+
+      if (isFirstLoad) {
+        showAnalysis();
+        populateStock(d);
+      } else {
+        wrap.classList.add('switching');
+        setTimeout(() => {
+          populateStock(d);
+          wrap.classList.remove('switching');
+        }, 200);
+      }
+    }
+
+    function populateStock(d) {
+      document.querySelectorAll('.pill').forEach(pill => {
+        pill.classList.toggle('active', pill.dataset.ticker === d.ticker);
+      });
+
+      document.getElementById('companyName').textContent = d.name;
+      document.getElementById('tickerSymbol').textContent = d.ticker;
+      document.getElementById('currentPrice').textContent = d.price;
+
+      const priceChange = document.getElementById('priceChange');
+      priceChange.textContent = d.change;
+      priceChange.className = `price-change ${d.changeClass}`.trim();
+
+      document.getElementById('priceTs').textContent = d.ts;
+      document.getElementById('chartBadgeText').textContent = `${d.ticker} EPS`;
+
+      updateMetric('m-pe', d.metrics.pe);
+      updateMetric('m-fpe', d.metrics.fpe);
+      updateMetric('m-rev', d.metrics.rev, d.metrics.revClass);
+      updateMetric('m-margin', d.metrics.margin);
+      updateMetric('m-eps', d.metrics.eps, d.metrics.epsClass);
+      updateMetric('m-cap', d.metrics.cap);
+      updateMetric('m-fcf', d.metrics.fcf, d.metrics.fcfClass);
+
+      document.getElementById('wm-title').textContent = d.wm.title;
+      document.getElementById('wm-text').textContent = d.wm.text;
+
+      document.getElementById('drivers-text').textContent = d.drivers;
+      document.getElementById('mon-short').textContent = d.monShort;
+      document.getElementById('mon-long').textContent = d.monLong;
+
+      document.getElementById('conclusionTitle').textContent = d.conclusion.title;
+      document.getElementById('conclusionText').textContent = d.conclusion.text;
+
+      renderSources(d.sources);
+      updateChart(d);
+    }
+
+    async function loadStock(ticker) {
+      setStatus('Loading…', 'loading');
+      const d = await fetchStockData(ticker);
+
+      if (!d) {
+        setStatus('Could not load the company.', 'warning');
+        return;
+      }
+
+      setStatus('');
+      renderStock(d);
+    }
+
+    function updateChart(d) {
+      const canvas = document.getElementById('stockChart');
+      if (!canvas) return;
+
+      if (currentChart) currentChart.destroy();
+
+      const ctx = canvas.getContext('2d');
+      const isNegative = d.changeClass === 'negative';
+      const color = isNegative ? '#b91c1c' : '#1a56db';
+      const fill = isNegative ? 'rgba(185, 28, 28, 0.06)' : 'rgba(26, 86, 219, 0.06)';
+
+      document.getElementById('chartSubtitle').textContent = `Last ${d.epsLabels.length} quarters · earnings per share`;
+
+      currentChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: d.epsLabels,
+          datasets: [{
+            label: `${d.ticker} EPS`,
+            data: d.epsData,
+            borderColor: color,
+            backgroundColor: fill,
+            fill: true,
+            tension: 0.38,
+            pointRadius: 3.5,
+            pointHoverRadius: 6,
+            pointBackgroundColor: color,
+            pointBorderColor: '#ffffff',
+            pointBorderWidth: 2,
+            borderWidth: 2.5
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          animation: { duration: 600, easing: 'easeOutQuart' },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#0f1a2e',
+              titleFont: { family: 'DM Sans', size: 11, weight: '600' },
+              bodyFont: { family: 'JetBrains Mono', size: 12 },
+              padding: 10,
+              cornerRadius: 8,
+              displayColors: false,
+              callbacks: {
+                label: function (context) {
+                  return `EPS: ${d.epsUnits} ${context.raw}`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { font: { family: 'DM Sans', size: 11 }, color: '#94a3b8' },
+              border: { display: false }
+            },
+            y: {
+              beginAtZero: true,
+              grid: { color: 'rgba(15, 26, 46, 0.04)' },
+              ticks: {
+                font: { family: 'JetBrains Mono', size: 11 },
+                color: '#94a3b8',
+                callback: function (value) { return `${d.epsUnits} ${value}`; }
+              },
+              border: { display: false }
+            }
+          }
+        }
+      });
+    }
+
+    function normalizeSearchValue(value) {
+      return value.trim().toUpperCase().replace(/\s+/g, ' ')
+        .replace('NVIDIA CORP', 'NVIDIA')
+        .replace('NOVO NORDISK B', 'NOVO B')
+        .replace('NOVO-B', 'NOVO B');
+    }
+
+    async function handleSearch() {
+      const rawValue = document.getElementById('searchInput').value;
+      if (!rawValue.trim()) { setStatus('Enter a company name or ticker.', 'warning'); return; }
+
+      if (CONFIG.USE_BACKEND) {
+        setStatus('Searching…', 'loading');
+        const d = await fetchSearchData(rawValue);
+        if (d) { setStatus(''); renderStock(d); }
+        else { setStatus('Not found. Check the ticker or company name.', 'warning'); }
+        return;
+      }
+
+      const value = normalizeSearchValue(rawValue);
+      if (value.includes('NVDA') || value.includes('NVIDIA')) { loadStock('NVDA'); return; }
+      if (value.includes('INVE') || value.includes('INVESTOR')) { loadStock('INVE-B'); return; }
+      if (value.includes('NOVO') || value.includes('NORDISK')) { loadStock('NOVO-B'); return; }
+      setStatus('In static mode only NVDA, INVE-B, and NOVO-B are supported.', 'warning');
+    }
+
+    document.getElementById('searchInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') handleSearch();
+    });
+  </script>
+</body>
+
+</html>
