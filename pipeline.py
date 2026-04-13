@@ -49,7 +49,7 @@ async def run_pipeline_full(query: str, language: str = "english") -> tuple:
     """
     from models import NormalizedData, ScoredSignal  # avoid circular at module level
     t0 = time.monotonic()
-    client = anthropic.AsyncAnthropic()
+    client = anthropic.AsyncAnthropic(max_retries=0)
 
     asset = identify(query)
     raw_text = await fetch_raw_data(asset.github_key)
@@ -102,7 +102,7 @@ async def run_pipeline(query: str, language: str = "english") -> PipelineRespons
     Returns a PipelineResponse ready for the frontend.
     """
     t0 = time.monotonic()
-    client = anthropic.AsyncAnthropic()  # uses ANTHROPIC_API_KEY env var
+    client = anthropic.AsyncAnthropic(max_retries=0)
 
     # Step 1 – Identify
     logger.info("Step 1: Identifying asset from '%s'", query)
