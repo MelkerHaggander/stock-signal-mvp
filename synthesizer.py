@@ -4,6 +4,7 @@ Step 7 – Synthesize top-ranked signals into a structured briefing via Claude L
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 from datetime import datetime
@@ -19,6 +20,7 @@ _MODEL = "claude-sonnet-4-20250514"
 _MAX_TOKENS = 2048
 _TEMPERATURE = 0.2
 _MAX_RETRIES = 2
+_RETRY_BASE_DELAY = 2.0  # seconds – doubles each retry (2 s, 4 s)
 _TOP_N = 10  # max signals sent to synthesis
 
 
@@ -70,7 +72,11 @@ async def synthesize(
                 raise RuntimeError(f"Synthesis failed after {_MAX_RETRIES + 1} attempts") from exc
         except anthropic.APIError as exc:
             logger.warning("Anthropic API error attempt %d: %s", attempt + 1, exc)
-            if attempt == _MAX_RETRIES:
+            if attempt < _MAX_RETRIES:
+                delay = _RETRY_BASE_DELAY * (2 ** attempt)
+                logger.info("Backing off %.1fs before synthesis retry %d", delay, attempt + 2)
+                await asyncio.sleep(delay)
+            else:
                 raise RuntimeError(f"Synthesis API failed after {_MAX_RETRIES + 1} attempts") from exc
 
     raise RuntimeError("Synthesis failed unexpectedly")
