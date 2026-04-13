@@ -5,6 +5,7 @@ Run with: uvicorn main:app --reload --port 8000
 
 from __future__ import annotations
 
+import asyncio  # ── ADDED
 import logging
 from pathlib import Path
 
@@ -30,6 +31,9 @@ logging.basicConfig(
     format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
 )
 logger = logging.getLogger("stock-signal-mvp")
+
+# ── ADDED: serialize pipeline runs to avoid API overload ─────────────────────
+_PIPELINE_LOCK = asyncio.Semaphore(1)
 
 # ── App ──────────────────────────────────────────────────────────────────────
 
@@ -67,7 +71,9 @@ async def analyze(request: PipelineRequest):
     **Response:** Structured briefing with four sections + metadata.
     """
     try:
-        result = await run_pipeline(request.query, request.language)
+        # ── CHANGED: acquire lock so only one pipeline runs at a time ──
+        async with _PIPELINE_LOCK:
+            result = await run_pipeline(request.query, request.language)
         return result
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
@@ -87,7 +93,9 @@ async def analyze(request: PipelineRequest):
 async def get_stock(ticker: str):
     """Run pipeline for a ticker and return frontend-compatible JSON."""
     try:
-        response, raw_text, scored = await run_pipeline_full(ticker)
+        # ── CHANGED: acquire lock so only one pipeline runs at a time ──
+        async with _PIPELINE_LOCK:
+            response, raw_text, scored = await run_pipeline_full(ticker)
         return build_frontend_payload(raw_text, response, scored)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
@@ -102,7 +110,9 @@ async def search_stock(q: str = ""):
     if not q.strip():
         raise HTTPException(status_code=400, detail="Query parameter 'q' is required.")
     try:
-        response, raw_text, scored = await run_pipeline_full(q.strip())
+        # ── CHANGED: acquire lock so only one pipeline runs at a time ──
+        async with _PIPELINE_LOCK:
+            response, raw_text, scored = await run_pipeline_full(q.strip())
         return build_frontend_payload(raw_text, response, scored)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
