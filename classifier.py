@@ -5,6 +5,7 @@ Each news item is sent individually to the LLM for classification.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 from datetime import datetime
@@ -20,6 +21,8 @@ _MODEL = "claude-sonnet-4-20250514"
 _MAX_TOKENS = 1024
 _TEMPERATURE = 0.0
 _MAX_RETRIES = 2
+_RETRY_BASE_DELAY = 2.0   # seconds – doubles each retry (2 s, 4 s)
+_INTER_REQUEST_DELAY = 0.5  # seconds – pause between data points
 
 
 async def classify_signals(
@@ -57,7 +60,11 @@ async def classify_signals(
             "content": content,
         })
 
-    for dp in data_points:
+    for i, dp in enumerate(data_points):
+        # Pause between requests to avoid bursts
+        if i > 0:
+            await asyncio.sleep(_INTER_REQUEST_DELAY)
+
         user_msg = CLASSIFICATION_USER_TEMPLATE.format(
             symbol=data.asset.symbol,
             company_name=data.asset.name,
@@ -103,7 +110,11 @@ async def classify_signals(
                     logger.error("Skipping data point %s after %d retries", dp["source_id"], _MAX_RETRIES)
             except anthropic.APIError as exc:
                 logger.warning("Anthropic API error on attempt %d: %s", attempt + 1, exc)
-                if attempt == _MAX_RETRIES:
+                if attempt < _MAX_RETRIES:
+                    delay = _RETRY_BASE_DELAY * (2 ** attempt)
+                    logger.info("Backing off %.1fs before retry %d", delay, attempt + 2)
+                    await asyncio.sleep(delay)
+                else:
                     logger.error("Skipping data point %s after API errors", dp["source_id"])
 
     return signals
