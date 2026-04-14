@@ -8,11 +8,12 @@ CLASSIFICATION_SYSTEM_PROMPT = """You are a financial signal classifier. Your on
 - You output ONLY valid JSON. No explanations, no preamble.
 - You classify based exclusively on what is explicitly stated in the data point. No inference.
 - You may extract multiple signals from one data point only if they represent clearly separable events.
-- If no signal type matches, return an empty signals array.
+- If no signal type matches for a data point, omit it from the output (no empty entries).
 - Never invent signal types outside the predefined list.
 - Never include direction, interpretation, or valuation.
-- If a data point matches the NOISE list, return an empty signals array immediately.
-- If a data point contains only contextual financial data, return an empty signals array. Contextual data is not a signal.
+- If a data point matches the NOISE list, skip it entirely.
+- If a data point contains only contextual financial data, skip it entirely. Contextual data is not a signal.
+- You will receive MULTIPLE data points in a single request. Classify ALL of them and return ALL results in one JSON response.
 </rules>
 <valid_signals>
 Classify ONLY into these types and subtypes. Each entry includes its base score and expiry for your reference — do not include these in output.
@@ -44,7 +45,7 @@ patent [score: 0.6, expiry: 365 days]
   subtypes: granted, filed, invalidated
 </valid_signals>
 <noise>
-The following are NEVER valid signals. If the data point contains only this type of information, return an empty signals array.
+The following are NEVER valid signals. If the data point contains only this type of information, skip it.
 - Social media posts or sentiment
 - Unconfirmed rumors or speculation
 - Chart patterns or technical analysis
@@ -58,7 +59,7 @@ The following are NEVER valid signals. If the data point contains only this type
 The following data types are not signals. They are contextual and used only in the synthesis step (step 7), not here.
 - Revenue, profit margins, P/E ratio, leverage ratios, cash flow, ROE, free cash flow
 - Total debt, equity, liquid assets, long-term debt relative to earnings
-If a data point contains only contextual financial data with no concrete company event, return an empty signals array.
+If a data point contains only contextual financial data with no concrete company event, skip it.
 </contextual_data>"""
 
 
@@ -66,24 +67,28 @@ CLASSIFICATION_USER_TEMPLATE = """<company>
 Symbol: {symbol}
 Name: {company_name}
 </company>
-<data_point>
-Source ID: {source_id}
-Published: {published_at}
-Content: {content}
-</data_point>
-Respond with this exact JSON structure and nothing else:
+<data_points>
+{data_points_xml}
+</data_points>
+Classify ALL data points above. Respond with this exact JSON structure and nothing else:
 {{
-  "signals": [
+  "results": [
     {{
-      "signal_id": "<source_id>_<seq>",
-      "type": "<signal_type>",
-      "subtype": "<signal_subtype>",
-      "source_id": "{source_id}",
-      "published_at": "{published_at}",
-      "detected_at": "{detected_at}"
+      "source_id": "<source_id>",
+      "signals": [
+        {{
+          "signal_id": "<source_id>_<seq>",
+          "type": "<signal_type>",
+          "subtype": "<signal_subtype>",
+          "source_id": "<source_id>",
+          "published_at": "<published_at>",
+          "detected_at": "{detected_at}"
+        }}
+      ]
     }}
   ]
-}}"""
+}}
+Only include data points that produced at least one signal. Omit data points with zero signals."""
 
 
 SYNTHESIS_SYSTEM_PROMPT = """You are a financial analyst producing a concise, signal-based stock briefing for a retail investor. Your task is to synthesize the provided ranked signals into a structured analysis.
