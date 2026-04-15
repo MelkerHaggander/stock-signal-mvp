@@ -161,12 +161,16 @@ def build_frontend_payload(
 
     pe = kv.get("P/E", "0")
     fpe = kv.get("Forward P/E", "0")
+    pb = kv.get("P/B", "–")
+    eveb = kv.get("EV/EBITDA", "–")
     market_cap = _num(kv.get("Market Cap", "0"))
 
     revenue = _num(kv.get("Revenue", "0"))
     op_income = _num(kv.get("Operating Income", "0"))
     fcf = _num(kv.get("Free Cash Flow", "0"))
     op_margin = (op_income / revenue * 100) if revenue else 0
+    roe_raw = kv.get("ROE", "")
+    divy_raw = kv.get("Dividend Yield", "")
 
     eps_actual = float(kv.get("EPS Actual", "0") or "0")
     eps_estimate = float(kv.get("EPS Estimate", "0") or "0")
@@ -206,11 +210,11 @@ def build_frontend_payload(
         "metrics": {
             "pe": pe,
             "fpe": fpe,
-            "rev": _pct(surprise),
-            "revClass": _dir_class(surprise),
-            "margin": f"{op_margin:.0f}%",
-            "eps": f"{unit} {eps_actual:.2f} {eps_arrow}",
-            "epsClass": eps_class,
+            "pb": pb if pb else "–",
+            "eveb": eveb if eveb else "–",
+            "margin": f"{op_margin:.0f}%" if op_margin else "–",
+            "roe": roe_raw if roe_raw else "–",
+            "divy": divy_raw if divy_raw else "–",
             "cap": _fmt_large(market_cap, currency),
             "fcf": _fmt_large(fcf, currency),
             "fcfClass": _dir_class(fcf),
