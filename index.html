@@ -918,11 +918,13 @@
         <div class="card animate-up stagger-2">
           <div class="card-title">Financial ratios</div>
           <div id="metricsContainer" style="margin-top: 12px;">
-            <div class="metric"><span class="metric-label">P/E</span><span class="metric-value" id="m-pe"></span></div>
+            <div class="metric"><span class="metric-label">P/E (trailing)</span><span class="metric-value" id="m-pe"></span></div>
             <div class="metric"><span class="metric-label">Forward P/E</span><span class="metric-value" id="m-fpe"></span></div>
-            <div class="metric"><span class="metric-label">Revenue growth</span><span class="metric-value" id="m-rev"></span></div>
+            <div class="metric"><span class="metric-label">P/B</span><span class="metric-value" id="m-pb"></span></div>
+            <div class="metric"><span class="metric-label">EV/EBITDA</span><span class="metric-value" id="m-eveb"></span></div>
             <div class="metric"><span class="metric-label">Operating margin</span><span class="metric-value" id="m-margin"></span></div>
-            <div class="metric"><span class="metric-label">EPS (actual)</span><span class="metric-value" id="m-eps"></span></div>
+            <div class="metric"><span class="metric-label">ROE</span><span class="metric-value" id="m-roe"></span></div>
+            <div class="metric"><span class="metric-label">Dividend yield</span><span class="metric-value" id="m-divy"></span></div>
             <div class="metric"><span class="metric-label">Market Cap</span><span class="metric-value" id="m-cap"></span></div>
             <div class="metric"><span class="metric-label">Free cash flow</span><span class="metric-value" id="m-fcf"></span></div>
           </div>
@@ -982,108 +984,114 @@
       'NVDA': {
         name: 'NVIDIA',
         ticker: 'NVDA',
-        price: '$114.50',
-        change: '▲ +2.30 (+2.1%)',
-        changeClass: '',
-        ts: 'Historical data · Q1 2025 · Not updated live',
-        epsLabels: ['Q1 FY24', 'Q2 FY24', 'Q3 FY24', 'Q4 FY24', 'Q1 FY25', 'Q2 FY25', 'Q3 FY25', 'Q4 FY25'],
-        epsData: [0.11, 0.27, 0.40, 0.49, 0.61, 0.68, 0.81, 0.89],
+        price: '$188.20',
+        change: '▼ -0.43 (-0.2%)',
+        changeClass: 'negative',
+        ts: 'Apr 14, 2026 · Source: Yahoo Finance, SEC filings',
+        epsLabels: ['Q1 FY25', 'Q2 FY25', 'Q3 FY25', 'Q4 FY25', 'Q1 FY26', 'Q2 FY26', 'Q3 FY26', 'Q4 FY26'],
+        epsData: [0.60, 0.67, 0.78, 0.89, 0.76, 1.08, 1.30, 1.76],
         epsUnits: '$',
         metrics: {
-          pe: '39', fpe: '35',
-          rev: '+114%', revClass: 'up',
-          margin: '63%',
-          eps: '$0.89 ▲', epsClass: 'up',
-          cap: '$2.7T',
-          fcf: '$60B', fcfClass: 'up'
+          pe: '38.4', fpe: '17.0',
+          pb: '29.1', eveb: '33.9',
+          margin: '60.4%',
+          roe: '101.5%',
+          divy: '0.02%',
+          cap: '$4.57T',
+          fcf: '$58.1B', fcfClass: 'up'
         },
         wm: {
-          title: 'Q4 FY2025 earnings beat expectations — guidance raised',
-          text: 'NVIDIA reported Q4 FY2025 (Jan 2025) with revenue of $39.3B vs estimated $38.5B, and non-GAAP EPS of $0.89 vs estimated $0.84. The Data Center segment generated $35.6B. The company simultaneously raised its Q1 FY2026 guidance to $43.0B — a double beat on both results and outlook.'
+          title: 'Record Q4 FY2026 — $68.1B revenue, Blackwell ramp accelerates',
+          text: 'NVIDIA reported Q4 FY2026 revenue of $68.1B (+73% YoY) and diluted EPS of $1.76 (+97% YoY). Data Center revenue was $62.3B, representing 91.5% of total sales. The Blackwell architecture now represents the majority of Data Center revenue. Full-year FY2026 revenue reached $215.9B (+65%). The company guided Q1 FY2027 revenue to $78B (+77% YoY). However, export controls have effectively foreclosed the China data center market, and the Groq IP license ($14.4B goodwill) adds integration risk.'
         },
-        drivers: 'Company value is driven by continued demand for GPUs for AI infrastructure and data centers. The Data Center segment accounted for 90% of revenue in FY2025. Operating margin of 55% (GAAP) and free cash flow of ~$60B in FY2025 show growth with maintained profitability. The Blackwell architecture launch is the next value driver.',
-        monShort: 'Next quarterly report (Q1 FY2026) and guidance is the key focus. Delivery capacity and margin development for the Blackwell generation is continuously priced by the market.',
-        monLong: 'The long-term case depends on whether the AI adoption curve maintains its pace. Export restrictions on GPUs to China and competition from AMD MI-series and custom chips from hyperscalers are key risks.',
+        drivers: 'Company value is driven by insatiable demand for AI infrastructure. Data Center accounted for 91.5% of Q4 revenue. The Blackwell Ultra and upcoming Rubin platform sustain the one-year architecture cadence. Gross margin of 71.1% (FY26) and operating cash flow of $102.7B demonstrate massive profitability at scale. Key risks include export controls (China effectively foreclosed), customer concentration (top 2 direct customers = 36% of revenue), and the $13B Groq license.',
+        monShort: 'Q1 FY2027 results and guidance confirmation ($78B revenue target) are the immediate focus. Supply constraints are expected to be a Gaming headwind. The USG replacement rule for AI Diffusion export controls remains pending, creating regulatory uncertainty.',
+        monLong: 'The long-term case depends on whether AI capex sustains its trajectory — the $7T data center funding gap is a real constraint. Competition from custom ASICs (Google TPU, Amazon Trainium) and AMD MI-series is intensifying. The upcoming Rubin platform (H2 FY27) must deliver to maintain architecture leadership. Open-source model adoption on competitor platforms is an emerging risk.',
         conclusion: {
-          title: 'Strong signal picture with a highly valued case',
-          text: 'The signal picture is predominantly positive based on Q4 FY2025 — a double beat on earnings and guidance. The dominant direction is bullish, driven by verified fundamental data. Risk: High valuation (P/E ~52x) means the case is sensitive to any negative revision in guidance, export restrictions, or margin deterioration.'
+          title: 'Dominant fundamentals at a compressed valuation',
+          text: 'NVIDIA\'s signal picture is strongly positive on fundamentals — record revenue, expanding margins, and massive cash generation. The forward P/E of ~17x is at a seven-year low relative to 70%+ earnings growth, making valuation historically attractive. However, the case carries meaningful risks: export control volatility, extreme customer concentration, and the unprecedented scale of AI infrastructure spending required by customers. The dominant direction is bullish, supported by verified data, but sensitive to geopolitical disruption and any sign of AI capex deceleration.'
         },
         sources: [
-          { short: 'IR', title: 'Q4 FY2025 Earnings Report', subtitle: 'Investor Relations · NVIDIA', href: 'https://investor.nvidia.com/' },
-          { short: 'YF', title: 'Financial data & key ratios', subtitle: 'Yahoo Finance', href: 'https://finance.yahoo.com/' },
-          { short: 'Rtr', title: 'News source', subtitle: 'Reuters', href: 'https://www.reuters.com/' }
+          { short: 'SEC', title: '10-K FY2026 Annual Report', subtitle: 'SEC Filing · NVIDIA', href: 'https://finance.yahoo.com/sec-filing/NVDA/0001045810-26-000021_1045810/' },
+          { short: 'SEC', title: '10-Q Q2 FY2026', subtitle: 'SEC Filing · NVIDIA', href: 'https://finance.yahoo.com/sec-filing/NVDA/0001045810-25-000209_1045810/' },
+          { short: 'YF', title: 'Financial data & key ratios', subtitle: 'Yahoo Finance', href: 'https://finance.yahoo.com/quote/NVDA/' },
+          { short: 'Rtr', title: 'PE sinks to seven-year low', subtitle: 'Reuters', href: 'https://www.tradingview.com/news/reuters.com,2026:newsml_L6N40F0YQ:0/' }
         ]
       },
 
       'INVE-B': {
         name: 'Investor B',
         ticker: 'INVE-B',
-        price: 'SEK 254.80',
-        change: '▲ +3.40 (+1.4%)',
+        price: 'SEK 364.10',
+        change: '▲ +9.80 (+2.8%)',
         changeClass: '',
-        ts: 'Historical data · Q1 2025 · Not updated live',
-        epsLabels: ['Q1 2022', 'Q2 2022', 'Q3 2022', 'Q4 2022', 'Q1 2023', 'Q2 2023', 'Q3 2023', 'Q4 2023'],
-        epsData: [3.2, 3.8, 4.1, 4.7, 5.3, 5.9, 6.8, 7.4],
+        ts: 'Apr 14, 2026 · Source: Yahoo Finance, Nasdaq Nordic',
+        epsLabels: ['Q4 2024', 'Q1 2025', 'Q2 2025', 'Q3 2025', 'Q4 2025'],
+        epsData: [-10.35, -0.99, 14.78, 19.53, 18.07],
         epsUnits: 'SEK',
         metrics: {
-          pe: '14.2', fpe: '13.1',
-          rev: '+6.2%', revClass: 'up',
-          margin: '38%',
-          eps: 'SEK 17.90 ▲', epsClass: 'up',
-          cap: 'SEK 610B',
-          fcf: 'SEK 19B', fcfClass: 'up'
+          pe: '6.0', fpe: '–',
+          pb: '1.06', eveb: '–',
+          margin: '–',
+          roe: '16.5%',
+          divy: '1.69%',
+          cap: 'SEK 1,012B',
+          fcf: 'SEK 19.0B', fcfClass: 'up'
         },
         wm: {
-          title: 'Net asset value rises driven by portfolio companies',
-          text: 'Investor B reported an increased net asset value per share, primarily driven by value growth in Atlas Copco and ABB. No negative signals were identified in the latest report. The company historically trades at a premium valuation relative to net asset value, reflecting confidence in the Wallenberg sphere\'s capital allocation.'
+          title: 'NAV up 14% to SEK 1,087B — board refresh ahead of AGM',
+          text: 'Investor AB reported FY2025 adjusted net asset value growth of 14% to SEK 1,087.1B and total shareholder return of 15%. Listed Companies returned 22%, while Patricia Industries returned -9% due to USD weakness. The board proposed a dividend of SEK 5.60/share (+8%). Two board members (Tom Johnstone and Isabelle Kocher) have declined re-election, prompting a refresh ahead of the May 7 AGM. Analysts forecast earnings to decline ~24.7% per year over the next 3 years. The stock trades at 59.6% below Simply Wall St\'s estimated fair value.'
         },
-        drivers: 'Company value is driven by the operational performance of portfolio companies, particularly in industry and technology. Atlas Copco and ABB are major positions and their margins directly impact Investor via net asset value. Low leverage provides room for capital allocation that can enhance long-term value creation.',
-        monShort: 'Portfolio company quarterly results are the key focus. Potential acquisitions or divestments can quickly change how net asset value is interpreted in the short term.',
-        monLong: 'The long-term case rests on the ability to allocate capital to the right sectors. Interest rates and the industrial cycle are macro factors directly linked to portfolio value.',
+        drivers: 'Company value is driven by the operational performance of portfolio companies — particularly Atlas Copco, ABB, and Ericsson. Patricia Industries added SEK 24B in acquisitions in 2025, including Vectura\'s acquisition of Goco Health Innovation City (up to SEK 2.9B). Cash at hand was SEK 27B with leverage at 2.1%. Nova Biomedical (60% North America) is a key Patricia subsidiary. The Wallenberg family\'s long-term capital allocation track record is the structural moat.',
+        monShort: 'Q1 2026 interim report (April 21) is the immediate catalyst. Portfolio company results, particularly in the industrial cycle, are key. The AGM on May 7 will reveal the new board composition. Insider buying activity (SEK 707K in March, SEK 4.3M in February) signals management confidence.',
+        monLong: 'The long-term case rests on capital allocation discipline across all three business areas (Listed Companies, Patricia Industries, EQT investments). Geopolitical uncertainty and tariff impacts on industrial companies are structural risks. The company achieved its 2030 sustainability target early (scope 1+2 emissions down 74% vs 2016).',
         conclusion: {
-          title: 'Stable signal picture with limited noise',
-          text: 'The signal picture is balanced positive — net asset value is increasing and no negative events have been identified recently. The dominant direction is cautiously bullish based on portfolio performance. Risk: A broad industrial downturn could impact multiple portfolio companies simultaneously.'
+          title: 'Stable compounder trading below estimated fair value',
+          text: 'The signal picture is balanced positive — NAV grew 14%, TSR was 15%, and the dividend increased 8%. The stock trades at a P/B of 1.06x, suggesting limited premium to NAV, and well below historical averages. Insider buying adds a constructive signal. Risk: The earnings decline forecast (-24.7%/year) from analysts reflects macro headwinds, and Patricia Industries\' FX sensitivity (USD weakness) could persist. The dominant direction is cautiously bullish, anchored by the Wallenberg family\'s 108-year track record of long-term value creation.'
         },
         sources: [
-          { short: 'IR', title: 'Interim report', subtitle: 'Investor Relations · Investor AB', href: 'https://www.investorab.com/' },
-          { short: 'YF', title: 'Financial data & key ratios', subtitle: 'Yahoo Finance', href: 'https://finance.yahoo.com/' },
-          { short: 'Nas', title: 'Market data', subtitle: 'Nasdaq Stockholm', href: 'https://www.nasdaq.com/' }
+          { short: 'IR', title: 'FY2025 Earnings Call', subtitle: 'Investor AB', href: 'https://www.investorab.com/' },
+          { short: 'YF', title: 'Financial data & key ratios', subtitle: 'Yahoo Finance', href: 'https://finance.yahoo.com/quote/INVE-B.ST/' },
+          { short: 'Nas', title: 'Trading statistics & AGM notice', subtitle: 'Nasdaq Nordic', href: 'https://www.nasdaq.com/european-market-activity/shares/inve-b' },
+          { short: 'AR', title: 'Annual Report 2025', subtitle: 'Investor AB', href: 'https://www.investorab.com/' }
         ]
       },
 
       'NOVO-B': {
         name: 'Novo Nordisk',
-        ticker: 'NOVO B',
-        price: 'DKK 648.00',
-        change: '▼ -14.20 (-2.1%)',
+        ticker: 'NOVO-B',
+        price: 'DKK 240.50',
+        change: '▼ -2.29 (-0.9%)',
         changeClass: 'negative',
-        ts: 'Historical data · Q1 2025 · Not updated live',
-        epsLabels: ['Q1 2023', 'Q2 2023', 'Q3 2023', 'Q4 2023', 'Q1 2024', 'Q2 2024', 'Q3 2024', 'Q4 2024'],
-        epsData: [11.2, 12.4, 13.1, 14.6, 15.7, 16.3, 15.1, 13.9],
+        ts: 'Apr 14, 2026 · Source: Yahoo Finance, SEC filings',
+        epsLabels: ['Q4 2024', 'Q1 2025', 'Q2 2025', 'Q3 2025', 'Q4 2025'],
+        epsData: [6.34, 6.53, 5.96, 4.50, 6.04],
         epsUnits: 'DKK',
         metrics: {
-          pe: '22.1', fpe: '19.4',
-          rev: '+25%', revClass: 'up',
-          margin: '45%',
-          eps: 'DKK 27.44 ▼', epsClass: 'down',
-          cap: 'DKK 1.55T',
-          fcf: 'DKK 70B', fcfClass: 'up'
+          pe: '10.5', fpe: '11.1',
+          pb: '5.50', eveb: '7.5',
+          margin: '44.5%',
+          roe: '60.7%',
+          divy: '6.61%',
+          cap: 'DKK 1.07T',
+          fcf: 'DKK 29.0B', fcfClass: 'up'
         },
         wm: {
-          title: 'CagriSema misses primary endpoint — stock fell sharply',
-          text: 'Novo Nordisk announced in December 2024 that the CagriSema combination treatment did not reach the primary endpoint in the REDEFINE study. The stock fell ~20% on the announcement day. The case now relies heavily on existing products Ozempic and Wegovy, while pipeline confidence has been revised down and the competitive landscape against Eli Lilly\'s Zepbound has sharpened.'
+          title: 'Wegovy pill launch impresses — but 2026 faces price-driven headwinds',
+          text: 'Novo Nordisk\'s Wegovy pill has generated 600,000+ prescriptions since its January launch, with UBS estimating Q1 pill sales of $235M. The company launched Wegovy HD (7.2mg) in the US at $399/month cash-pay. However, 2026 guidance reflects revenue decline (-7.6% est.) due to massive price cuts: ~50% for Wegovy and ~33% for Ozempic in the US. The market cap has fallen from DKK 2.77T (Dec 2024) to DKK 1.07T — a $475B wipeout since Wegovy-era peak. Eli Lilly\'s oral pill Foundayo (orforglipron) launched in April, intensifying competition. Novo claims indirect comparison shows Wegovy pill delivers greater weight loss vs Foundayo, but Foundayo has dosing convenience advantages (no fasting requirement).'
         },
-        drivers: 'Company value is still driven by Ozempic and Wegovy, with stable and strong demand in the global GLP-1 segment. FY2024 revenue grew ~25%. However, pipeline confidence has weakened significantly after the CagriSema outcome, and the competitive landscape against Eli Lilly is sharper. Existing cash flows are strong but the market is pricing down optionality.',
-        monShort: 'The next clinical data readout and FY2025 guidance are critical. Wegovy volume trends in the US and potential pricing decisions under the IRA framework are key short-term factors.',
-        monLong: 'The long-term case depends on whether Novo Nordisk can deliver next-generation weight loss medication and rebuild pipeline confidence. Competition from Eli Lilly and oral GLP-1 candidates is the structural risk.',
+        drivers: 'Revenue is still driven by Ozempic and Wegovy (combined GLP-1 franchise), with FY2025 revenue of DKK 309B. New catalysts include: Wegovy HD launch, Awiqli (first weekly insulin, FDA-approved March 2026), and CagriSema (FDA application filed despite underwhelming trial data showing 22.7% weight loss vs 25% target). The share repurchase program (DKK 15B over 12 months) provides capital return. However, India patent expiry (March 2025) saw GLP-1 share shift to 33% from low-cost competitors, and Novo cut prices up to 48%. Semaglutide cardiovascular data (47,199 patients, lower mortality at higher doses) supports long-term value.',
+        monShort: 'Q1 2026 report (May 6) is the key catalyst — consensus expects DKK 73.2B revenue (-6.3% YoY). Wegovy pill prescription trajectory and Foundayo competitive impact are critical. The Hims & Hers distribution deal (branded Wegovy/Ozempic on telehealth platform) could accelerate volume. CagriSema FDA review timeline is being watched.',
+        monLong: 'The long-term case depends on: (1) oral GLP-1 market capture vs Lilly\'s Foundayo and upcoming Viking/Structure pills, (2) rebuilding pipeline confidence after CagriSema disappointment — amycretin (GLP-1 + amylin) is the next-gen hope, (3) navigating the post-patent semaglutide landscape, and (4) the consumer-oriented strategy shift signaled by Mars CEO appointment to the board. Morgan Stanley forecasts the total addressable "diabesity" market at $190B by 2035. TD Cowen downgraded to hold, questioning post-semaglutide visibility.',
         conclusion: {
-          title: 'Mixed signal picture with clear downside risk',
-          text: 'The signal picture is mixed — a confirmed negative pipeline outcome (CagriSema, Dec 2024) weighs heavily against continued strong cash flows from existing products. The dominant direction is cautiously bearish. Risk: Further negative pipeline readouts or pricing pressure could trigger additional re-valuation.'
+          title: 'Deep value emerging, but structural risks persist',
+          text: 'The signal picture is mixed but improving. The stock trades at a trailing P/E of 10.5x and forward P/E of 11.1x — historically cheap for a company with 44.5% operating margins and 60.7% ROE. The 6.6% forward dividend yield provides downside support. Positive signals: strong Wegovy pill launch, Awiqli approval, DKK 15B buyback, and emerging cardiovascular data for semaglutide. Negative signals: 2026 revenue guidance declining, CagriSema underperformance, semaglutide patent cliff approaching, and Eli Lilly\'s competitive pressure. Norway\'s sovereign wealth fund abstained on the chairman vote, flagging governance concerns. The dominant direction is cautiously neutral — the valuation compression has created potential opportunity, but the company must prove its next-generation pipeline can sustain growth beyond semaglutide.'
         },
         sources: [
-          { short: 'PR', title: 'CagriSema REDEFINE outcome', subtitle: 'Novo Nordisk press release', href: 'https://www.novonordisk.com/' },
-          { short: 'YF', title: 'Financial data & key ratios', subtitle: 'Yahoo Finance', href: 'https://finance.yahoo.com/' },
-          { short: 'Rtr', title: 'News source', subtitle: 'Reuters', href: 'https://www.reuters.com/' }
+          { short: 'SEC', title: '20-F Annual Report FY2025', subtitle: 'SEC Filing · Novo Nordisk', href: 'https://finance.yahoo.com/quote/NVO/profile/' },
+          { short: 'YF', title: 'Financial data & key ratios', subtitle: 'Yahoo Finance', href: 'https://finance.yahoo.com/quote/NOVO-B.CO/' },
+          { short: 'Rtr', title: 'Novo strikes deal with Hims', subtitle: 'Reuters', href: 'https://www.tradingview.com/news/reuters.com,2026:newsml_L1N3ZX0JZ:0/' },
+          { short: 'UBS', title: 'Wegovy pill sales guidance', subtitle: 'UBS via DJ Newswires', href: 'https://www.tradingview.com/news/DJN_DN20260410002438:0/' }
         ]
       }
     };
@@ -1223,9 +1231,11 @@
 
       updateMetric('m-pe', d.metrics.pe);
       updateMetric('m-fpe', d.metrics.fpe);
-      updateMetric('m-rev', d.metrics.rev, d.metrics.revClass);
+      updateMetric('m-pb', d.metrics.pb);
+      updateMetric('m-eveb', d.metrics.eveb);
       updateMetric('m-margin', d.metrics.margin);
-      updateMetric('m-eps', d.metrics.eps, d.metrics.epsClass);
+      updateMetric('m-roe', d.metrics.roe);
+      updateMetric('m-divy', d.metrics.divy);
       updateMetric('m-cap', d.metrics.cap);
       updateMetric('m-fcf', d.metrics.fcf, d.metrics.fcfClass);
 
@@ -1263,7 +1273,8 @@
       if (currentChart) currentChart.destroy();
 
       const ctx = canvas.getContext('2d');
-      const isNegative = d.changeClass === 'negative';
+      const epsArr = d.epsData;
+      const isNegative = epsArr.length >= 2 && epsArr[epsArr.length - 1] < epsArr[0];
       const color = isNegative ? '#b91c1c' : '#1a56db';
       const fill = isNegative ? 'rgba(185, 28, 28, 0.06)' : 'rgba(26, 86, 219, 0.06)';
 
@@ -1316,7 +1327,6 @@
               border: { display: false }
             },
             y: {
-              beginAtZero: true,
               grid: { color: 'rgba(15, 26, 46, 0.04)' },
               ticks: {
                 font: { family: 'JetBrains Mono', size: 11 },
