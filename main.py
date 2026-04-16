@@ -94,8 +94,8 @@ async def get_stock(ticker: str):
     """Run pipeline for a ticker and return frontend-compatible JSON."""
     try:
         async with _PIPELINE_LOCK:
-            response, raw_text, scored = await run_pipeline_full(ticker)
-        return build_frontend_payload(raw_text, response, scored)
+            response, raw_text, scored, financial_data = await run_pipeline_full(ticker)
+        return build_frontend_payload(raw_text, response, scored, financial_data)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
     except Exception as exc:
@@ -110,8 +110,8 @@ async def search_stock(q: str = ""):
         raise HTTPException(status_code=400, detail="Query parameter 'q' is required.")
     try:
         async with _PIPELINE_LOCK:
-            response, raw_text, scored = await run_pipeline_full(q.strip())
-        return build_frontend_payload(raw_text, response, scored)
+            response, raw_text, scored, financial_data = await run_pipeline_full(q.strip())
+        return build_frontend_payload(raw_text, response, scored, financial_data)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
     except Exception as exc:
