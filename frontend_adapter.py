@@ -1,9 +1,28 @@
 """
 Transforms pipeline output into the JSON shape expected by the StockView frontend.
 
-Financial ratios and EPS history are sourced from verified data (Yahoo Finance,
-SEC filings, Nasdaq Nordic) and stored as a lookup table. The raw GitHub text
-contains only news articles and does not carry structured financial fields.
+Financial ratios, price, and EPS history are provided by the caller as a
+dict (typically fetched from <github_key>.json on GitHub). This adapter
+does not contain any hardcoded per-asset data – everything is driven by
+the JSON payload stored in the Stock-Data repo.
+
+Expected financial_data shape (all fields optional):
+    {
+        "currency": "USD",
+        "price": 188.20,
+        "change_val": -0.43,
+        "change_pct": -0.23,
+        "ts_label": "Apr 15, 2026",
+        "metrics": {
+            "pe": "38.4", "fpe": "17.0", "pb": "29.1", "eveb": "33.9",
+            "margin": "60.4%", "roe": "101.5%", "divy": "0.02%",
+            "cap": "$4.57T", "fcf": "$58.1B", "fcfClass": "up"
+        },
+        "eps_labels": ["Q1 FY25", "Q2 FY25", ...],
+        "eps_data": [0.60, 0.67, ...],
+        "eps_unit": "$"
+    }
+Missing fields render as placeholders (\u2013) on the frontend.
 """
 
 from __future__ import annotations
@@ -11,88 +30,15 @@ from __future__ import annotations
 from models import PipelineResponse, ScoredSignal
 
 
-# ── Verified financial data per symbol ────────────────────────────────────────
-# Sources: Yahoo Finance key-statistics, SEC 10-K/20-F filings, Nasdaq Nordic.
-# Last updated: 2026-04-15.
+# ── Helpers ───────────────────────────────────────────────────────────────────
 
-_FINANCIAL_DATA: dict[str, dict] = {
-    "NVDA": {
-        "currency": "USD",
-        "price": 188.20,
-        "change_val": -0.43,
-        "change_pct": -0.23,
-        "ts_label": "Apr 15, 2026",
-        "metrics": {
-            "pe": "38.4",
-            "fpe": "17.0",
-            "pb": "29.1",
-            "eveb": "33.9",
-            "margin": "60.4%",
-            "roe": "101.5%",
-            "divy": "0.02%",
-            "cap": "$4.57T",
-            "fcf": "$58.1B",
-            "fcfClass": "up",
-        },
-        "eps_labels": [
-            "Q1 FY25", "Q2 FY25", "Q3 FY25", "Q4 FY25",
-            "Q1 FY26", "Q2 FY26", "Q3 FY26", "Q4 FY26",
-        ],
-        "eps_data": [0.60, 0.67, 0.78, 0.89, 0.76, 1.08, 1.30, 1.76],
-        "eps_unit": "$",
-    },
-    "INVE-B.ST": {
-        "currency": "SEK",
-        "price": 364.10,
-        "change_val": 9.80,
-        "change_pct": 2.77,
-        "ts_label": "Apr 15, 2026",
-        "metrics": {
-            "pe": "6.0",
-            "fpe": "\u2013",
-            "pb": "1.06",
-            "eveb": "\u2013",
-            "margin": "\u2013",
-            "roe": "16.5%",
-            "divy": "1.69%",
-            "cap": "SEK 1,012B",
-            "fcf": "SEK 19.0B",
-            "fcfClass": "up",
-        },
-        "eps_labels": [
-            "Q4 2024", "Q1 2025", "Q2 2025", "Q3 2025", "Q4 2025",
-        ],
-        "eps_data": [-10.35, -0.99, 14.78, 19.53, 18.07],
-        "eps_unit": "SEK",
-    },
-    "NOVO-B.CO": {
-        "currency": "DKK",
-        "price": 240.50,
-        "change_val": -2.29,
-        "change_pct": -0.94,
-        "ts_label": "Apr 15, 2026",
-        "metrics": {
-            "pe": "10.5",
-            "fpe": "11.1",
-            "pb": "5.50",
-            "eveb": "7.5",
-            "margin": "44.5%",
-            "roe": "60.7%",
-            "divy": "6.61%",
-            "cap": "DKK 1.07T",
-            "fcf": "DKK 29.0B",
-            "fcfClass": "up",
-        },
-        "eps_labels": [
-            "Q4 2024", "Q1 2025", "Q2 2025", "Q3 2025", "Q4 2025",
-        ],
-        "eps_data": [6.34, 6.53, 5.96, 4.50, 6.04],
-        "eps_unit": "DKK",
-    },
-}
+def _default_currency(symbol: str) -> str:
+    if symbol.endswith(".ST"):
+        return "SEK"
+    if symbol.endswith(".CO"):
+        return "DKK"
+    return "USD"
 
-
-# ── Formatting helpers ────────────────────────────────────────────────────────
 
 def _fmt_price(value: float, currency: str) -> str:
     if currency == "USD":
@@ -100,14 +46,8 @@ def _fmt_price(value: float, currency: str) -> str:
     return f"{currency} {value:,.2f}"
 
 
-# ── Section splitters ─────────────────────────────────────────────────────────
-
 def _extract_title_and_body(text: str) -> tuple[str, str]:
-    """Split synthesized text into (title, body).
-
-    Uses the first sentence as the title. Never truncates mid-sentence
-    so the frontend always shows a complete, readable heading.
-    """
+    """Split synthesized text into (title, body) at the first sentence break."""
     text = text.strip()
     for sep in [". ", ".\n"]:
         idx = text.find(sep)
@@ -156,20 +96,28 @@ def build_frontend_payload(
     raw_text: str,
     response: PipelineResponse,
     scored_signals: list[ScoredSignal],
+    financial_data: dict | None = None,
 ) -> dict:
-    """Build the JSON shape that the StockView frontend renderStock() expects."""
+    """Build the JSON shape that the StockView frontend renderStock() expects.
 
+    Args:
+        raw_text: Raw news text from GitHub (used for signal pipeline, not display).
+        response: Structured pipeline output with synthesized sections.
+        scored_signals: Scored signals (kept for interface compatibility; unused here).
+        financial_data: Optional dict with price, metrics, and EPS history,
+            typically parsed from <github_key>.json on GitHub. When None,
+            placeholder values are shown.
+    """
     sec = response.sections
+    fin = financial_data or {}
 
-    # Look up verified financial data for this symbol
-    fin = _FINANCIAL_DATA.get(response.symbol, {})
-    currency = fin.get("currency", "USD")
+    currency = fin.get("currency") or _default_currency(response.symbol)
 
     display_ticker = response.symbol
     for sfx in [".ST", ".CO", ".OL", ".HE"]:
         display_ticker = display_ticker.replace(sfx, "")
 
-    # Price and change from verified data
+    # Price and change
     price = fin.get("price", 0.0)
     change_val = fin.get("change_val", 0.0)
     change_pct = fin.get("change_pct", 0.0)
@@ -178,17 +126,19 @@ def build_frontend_payload(
     change_str = f"{arrow} {sign}{change_val:.2f} ({sign}{change_pct:.1f}%)"
     change_class = "negative" if change_val < 0 else ""
 
-    ts_label = fin.get("ts_label", response.generated_at[:10])
+    # Timestamp label
+    if fin.get("ts_label"):
+        ts_text = f"{fin['ts_label']} \u00b7 Source: Yahoo Finance, SEC filings"
+    else:
+        ts_text = f"Generated {response.generated_at[:10]}"
 
-    # Metrics from verified lookup
-    metrics = fin.get("metrics", {})
+    # Metrics and EPS
+    metrics = fin.get("metrics") or {}
+    eps_labels = fin.get("eps_labels") or ["\u2014"]
+    eps_data = fin.get("eps_data") or [0]
+    eps_unit = fin.get("eps_unit") or ("$" if currency == "USD" else currency)
 
-    # EPS trend from verified lookup
-    eps_labels = fin.get("eps_labels", ["Latest"])
-    eps_data = fin.get("eps_data", [0])
-    eps_unit = fin.get("eps_unit", "$" if currency == "USD" else currency)
-
-    # Section splitting
+    # Analysis sections
     wm_title, wm_text = _extract_title_and_body(sec.what_matters_now)
     mon_short, mon_long = _split_monitoring(sec.monitoring)
     conc_title, conc_text = _extract_title_and_body(sec.conclusion)
@@ -216,7 +166,7 @@ def build_frontend_payload(
         "price": _fmt_price(price, currency),
         "change": change_str,
         "changeClass": change_class,
-        "ts": f"{ts_label} \u00b7 Source: Yahoo Finance, SEC filings",
+        "ts": ts_text,
         "epsLabels": eps_labels,
         "epsData": eps_data,
         "epsUnits": eps_unit,
