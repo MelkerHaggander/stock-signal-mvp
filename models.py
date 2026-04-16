@@ -7,7 +7,7 @@ classification -> scoring -> synthesis -> validation.
 from __future__ import annotations
 
 import hashlib
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Optional
 
@@ -71,7 +71,9 @@ class NewsItem(BaseModel):
 class NormalizedData(BaseModel):
     asset: Asset
     news: list[NewsItem]
-    collected_at: str = Field(default_factory=lambda: datetime.utcnow().isoformat() + "Z")
+    collected_at: str = Field(
+        default_factory=lambda: datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    )
 
 
 # -- Step 5 --
