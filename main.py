@@ -123,4 +123,4 @@ async def search_stock(q: str = ""):
 @app.get("/")
 async def serve_frontend():
     """Serve the single-page frontend."""
-    return FileResponse("index.html")
+    return FileResponse(str(_project_dir / "index.html"))
