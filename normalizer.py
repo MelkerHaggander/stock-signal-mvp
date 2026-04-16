@@ -8,24 +8,55 @@ from __future__ import annotations
 
 import hashlib
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 
 from models import Asset, NewsItem, NormalizedData
 
 # ── Date patterns ────────────────────────────────────────────────────────────
-# Matches: "Apr 9, 2026", "Apr 9, 2026, 17:07 GMT+2", "2026-03-27", etc.
+# Order matters: most specific first.
 
 _DATE_PATTERNS = [
-    # "Apr 9, 2026, 17:07 GMT+2" or "Apr 9, 2026"
+    # Full ISO-8601 with time and optional Z/offset: "2026-03-27T10:30:00Z"
     re.compile(
-        r"((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2},\s+\d{4})"
+        r"(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+\-]\d{2}:?\d{2})?)"
+    ),
+    # English month name: "Apr 9, 2026, 17:07 GMT+2" or "Apr 9, 2026"
+    re.compile(
+        r"((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)"
+        r"(?:uary|ruary|ch|il|e|y|ust|tember|ober|ember)?"
+        r"\s+\d{1,2},\s+\d{4})"
         r"(?:,?\s+(\d{2}:\d{2})(?:\s+GMT([+\-]?\d+))?)?"
     ),
-    # "2026-03-27" ISO-style
+    # Swedish/Danish month name: "9 april 2026", "27 mars 2026"
+    re.compile(
+        r"(\d{1,2}\s+(?:januari|februari|mars|april|maj|juni|juli|augusti|"
+        r"september|oktober|november|december|"
+        r"jan|feb|mar|apr|maj|jun|jul|aug|sep|okt|nov|dec)\s+\d{4})",
+        re.IGNORECASE,
+    ),
+    # Plain ISO date: "2026-03-27"
     re.compile(r"(\d{4}-\d{2}-\d{2})"),
+    # European numeric: "27/03/2026" or "27.03.2026"
+    re.compile(r"(\d{1,2}[./]\d{1,2}[./]\d{4})"),
 ]
 
 _URL_RE = re.compile(r"https?://\S+")
+
+# Swedish/Danish month name -> month number
+_SV_MONTHS: dict[str, int] = {
+    "januari": 1, "jan": 1,
+    "februari": 2, "feb": 2,
+    "mars": 3, "mar": 3,
+    "april": 4, "apr": 4,
+    "maj": 5,
+    "juni": 6, "jun": 6,
+    "juli": 7, "jul": 7,
+    "augusti": 8, "aug": 8,
+    "september": 9, "sep": 9,
+    "oktober": 10, "okt": 10,
+    "november": 11, "nov": 11,
+    "december": 12, "dec": 12,
+}
 
 # ── Source extraction from URL domain ────────────────────────────────────────
 
@@ -64,28 +95,78 @@ def _source_from_url(url: str) -> str:
 
 
 def _try_parse_date(text: str) -> str:
-    """Try to parse a date string into ISO format. Returns '' on failure."""
-    for pattern in _DATE_PATTERNS:
-        m = pattern.search(text)
-        if not m:
-            continue
+    """
+    Try to parse a date string into ISO-8601 UTC format.
+    Returns '' on failure. Output always ends with 'Z'.
+    """
+    # 1. Full ISO-8601 with time — parse directly via fromisoformat.
+    m = _DATE_PATTERNS[0].search(text)
+    if m:
+        try:
+            raw = m.group(1).replace("Z", "+00:00")
+            dt = datetime.fromisoformat(raw)
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            else:
+                dt = dt.astimezone(timezone.utc)
+            return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+        except ValueError:
+            pass
+
+    # 2. English month name + day + year (+ optional time/GMT offset)
+    m = _DATE_PATTERNS[1].search(text)
+    if m:
         date_part = m.group(1)
+        # Normalize full month name to 3-letter for strptime %b
+        for fmt in ("%b %d, %Y", "%B %d, %Y"):
+            try:
+                dt = datetime.strptime(date_part, fmt)
+                # Attach time if captured
+                if m.lastindex and m.lastindex >= 2 and m.group(2):
+                    try:
+                        h, mi = m.group(2).split(":")
+                        dt = dt.replace(hour=int(h), minute=int(mi))
+                    except (ValueError, TypeError):
+                        pass
+                dt = dt.replace(tzinfo=timezone.utc)
+                return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+            except ValueError:
+                continue
+
+    # 3. Swedish/Danish month name
+    m = _DATE_PATTERNS[2].search(text)
+    if m:
+        parts = m.group(1).strip().split()
+        if len(parts) == 3:
+            try:
+                day = int(parts[0])
+                month = _SV_MONTHS.get(parts[1].lower())
+                year = int(parts[2])
+                if month:
+                    dt = datetime(year, month, day, tzinfo=timezone.utc)
+                    return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+            except (ValueError, TypeError):
+                pass
+
+    # 4. Plain ISO date
+    m = _DATE_PATTERNS[3].search(text)
+    if m:
         try:
-            # Try "Apr 9, 2026" format
-            dt = datetime.strptime(date_part, "%b %d, %Y")
-            # Add time if present (group 2 exists on the first pattern)
-            if m.lastindex and m.lastindex >= 2 and m.group(2):
-                h, mi = m.group(2).split(":")
-                dt = dt.replace(hour=int(h), minute=int(mi))
+            dt = datetime.strptime(m.group(1), "%Y-%m-%d").replace(tzinfo=timezone.utc)
             return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
         except ValueError:
             pass
-        try:
-            # Try "2026-03-27" format
-            dt = datetime.strptime(date_part, "%Y-%m-%d")
-            return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
-        except ValueError:
-            pass
+
+    # 5. European numeric date
+    m = _DATE_PATTERNS[4].search(text)
+    if m:
+        for fmt in ("%d/%m/%Y", "%d.%m.%Y"):
+            try:
+                dt = datetime.strptime(m.group(1), fmt).replace(tzinfo=timezone.utc)
+                return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+            except ValueError:
+                continue
+
     return ""
 
 
