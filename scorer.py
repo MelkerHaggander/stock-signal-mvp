@@ -5,7 +5,7 @@ Deterministic: final_weight = base_score × age_factor.
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from models import ClassifiedSignal, ScoredSignal
 
@@ -80,9 +80,16 @@ def _get_expiry(signal_type: str, subtype: str) -> int:
 
 
 def _compute_age_factor(published_at: str, signal_type: str, subtype: str, now: datetime) -> float:
+    """
+    Compute age factor. `now` must be timezone-aware (UTC).
+    Returns 0.0 for unparseable dates or expired signals.
+    """
     try:
-        pub = datetime.fromisoformat(published_at.replace("Z", "+00:00")).replace(tzinfo=None)
-    except (ValueError, TypeError):
+        pub = datetime.fromisoformat(published_at.replace("Z", "+00:00"))
+        # If parsing yielded a naive datetime, assume UTC (published_at is ISO from our normalizer).
+        if pub.tzinfo is None:
+            pub = pub.replace(tzinfo=timezone.utc)
+    except (ValueError, TypeError, AttributeError):
         return 0.0
 
     age_days = (now - pub).days
@@ -107,7 +114,10 @@ def score_signals(
     Score and rank signals. Returns sorted list (highest weight first).
     Expired or invalid signals are excluded.
     """
-    now = reference_date or datetime.utcnow()
+    now = reference_date or datetime.now(timezone.utc)
+    # Ensure `now` is tz-aware so arithmetic with pub (tz-aware) works.
+    if now.tzinfo is None:
+        now = now.replace(tzinfo=timezone.utc)
     scored: list[ScoredSignal] = []
 
     for sig in signals:
@@ -133,21 +143,20 @@ def score_signals(
             source_url=sig.source_url,
         ))
 
-    # Sort: highest final_weight first, then newest, then highest base, then specificity
+    # Sort order (highest priority first):
+    #   1. final_weight desc  — best signals first
+    #   2. published_at desc  — newest wins on ties
+    #   3. base score desc    — higher-impact signal types win next
+    #   4. specificity asc    — more specific types win as final tiebreaker
+    #
+    # Python's sort is stable, so we do this in two passes: first the
+    # tiebreakers, then the primary key last. This avoids fighting with
+    # mixed ascending/descending keys on string fields in a single tuple.
     scored.sort(key=lambda s: (
-        -s.final_weight,
-        s.published_at,  # will sort descending because newer dates are "larger" strings; negate below
-        -s.score,
-        _SPECIFICITY.get(s.type, 99),
+        _SPECIFICITY.get(s.type, 99),      # ascending
+        -s.score,                           # descending (via negation)
     ))
-    # Fix: sort by published_at descending (newest first) as tiebreaker
-    scored.sort(key=lambda s: (-s.final_weight,))
-    # Stable sub-sort for same weight: newest first
-    from itertools import groupby
-    result = []
-    scored_by_weight = sorted(scored, key=lambda s: -s.final_weight)
-    for _w, group in groupby(scored_by_weight, key=lambda s: s.final_weight):
-        items = sorted(group, key=lambda s: s.published_at, reverse=True)
-        result.extend(items)
+    scored.sort(key=lambda s: s.published_at, reverse=True)  # newest first
+    scored.sort(key=lambda s: s.final_weight, reverse=True)  # primary key
 
-    return result
+    return scored
