@@ -5,9 +5,10 @@ All data points are sent in a single batched request for efficiency.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 import anthropic
 
@@ -20,6 +21,7 @@ _MODEL = "claude-sonnet-4-20250514"
 _MAX_TOKENS = 4096
 _TEMPERATURE = 0.0
 _MAX_RETRIES = 2
+_RETRY_BASE_DELAY = 2.0  # seconds — doubles each retry (2s, 4s)
 
 
 async def classify_signals(
@@ -33,7 +35,7 @@ async def classify_signals(
     if not data.news:
         return []
 
-    now = datetime.utcnow().isoformat() + "Z"
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     # Build source metadata lookup
     source_meta: dict[str, dict[str, str]] = {}
@@ -113,7 +115,11 @@ async def classify_signals(
                 return []
         except anthropic.APIError as exc:
             logger.warning("Anthropic API error on attempt %d: %s", attempt + 1, exc)
-            if attempt == _MAX_RETRIES:
+            if attempt < _MAX_RETRIES:
+                delay = _RETRY_BASE_DELAY * (2 ** attempt)
+                logger.info("Backing off %.1fs before classification retry %d", delay, attempt + 2)
+                await asyncio.sleep(delay)
+            else:
                 logger.error("Classification failed after API errors")
                 return []
 
