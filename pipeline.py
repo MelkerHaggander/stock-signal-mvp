@@ -4,6 +4,7 @@ Pipeline orchestrator – runs all 8 steps sequentially.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import time
 
@@ -11,7 +12,7 @@ import anthropic
 
 from models import PipelineResponse, SourceReference
 from identifier import identify
-from fetcher import fetch_raw_data
+from fetcher import fetch_raw_data, fetch_financial_data
 from normalizer import normalize
 from filter import filter_noise
 from classifier import classify_signals
@@ -44,15 +45,24 @@ def _build_sources(scored_signals) -> list[SourceReference]:
 
 async def run_pipeline_full(query: str, language: str = "english") -> tuple:
     """
-    Run the full pipeline and return (PipelineResponse, NormalizedData, list[ScoredSignal]).
+    Run the full pipeline and return
+    (PipelineResponse, raw_text, list[ScoredSignal], financial_data | None).
     Used by the frontend-facing endpoints that need intermediate data.
+
+    `financial_data` is fetched in parallel from GitHub (<github_key>.json)
+    and contains structured ratios + EPS history for the frontend.
+    It is None if the file is missing or unreadable.
     """
     from models import NormalizedData, ScoredSignal  # avoid circular at module level
     t0 = time.monotonic()
     client = anthropic.AsyncAnthropic(max_retries=0)
 
     asset = identify(query)
-    raw_text = await fetch_raw_data(asset.github_key)
+    # News text (required) and financial data (optional) are fetched in parallel
+    raw_text, financial_data = await asyncio.gather(
+        fetch_raw_data(asset.github_key),
+        fetch_financial_data(asset.github_key),
+    )
     data = normalize(raw_text)
     data = filter_noise(data)
     signals = await classify_signals(data, client)
@@ -74,7 +84,7 @@ async def run_pipeline_full(query: str, language: str = "english") -> tuple:
             top_signal_type="none",
             sources=[],
         )
-        return resp, raw_text, scored
+        return resp, raw_text, scored, financial_data
 
     output = await synthesize(scored, data, language, client)
     validation = validate(output, scored)
@@ -93,7 +103,7 @@ async def run_pipeline_full(query: str, language: str = "english") -> tuple:
         top_signal_type=scored[0].type if scored else "none",
         sources=sources,
     )
-    return resp, raw_text, scored
+    return resp, raw_text, scored, financial_data
 
 
 async def run_pipeline(query: str, language: str = "english") -> PipelineResponse:
