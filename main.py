@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -21,7 +22,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
 from models import PipelineRequest, PipelineResponse
-from pipeline import run_pipeline, run_pipeline_full
+from pipeline import run_pipeline, run_pipeline_full, _client
 from frontend_adapter import build_frontend_payload
 
 # ── Logging ──────────────────────────────────────────────────────────────────
@@ -36,12 +37,42 @@ logger = logging.getLogger("stock-signal-mvp")
 # Only one pipeline runs at a time to avoid flooding the Anthropic API.
 _PIPELINE_LOCK = asyncio.Semaphore(1)
 
+# ── Lifespan – pre-warm Anthropic client at startup ─────────────────────────
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Pre-warm the shared Anthropic client at server startup so the first real
+    analysis does not pay the SDK-init + TCP/TLS handshake cost.
+    Uses Haiku with max_tokens=1 – negligible cost (~fractions of a cent per
+    server start). Failures are non-fatal: we log and continue so the server
+    still boots even if the warm-up call fails (e.g. transient network issue).
+    """
+    try:
+        await _client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=1,
+            messages=[{"role": "user", "content": "hi"}],
+        )
+        logger.info("Anthropic client pre-warmed")
+    except Exception as exc:
+        logger.warning("Anthropic pre-warm failed (non-fatal): %s", exc)
+    yield
+    # Shutdown – close the shared httpx connection pool cleanly.
+    try:
+        await _client.close()
+    except Exception as exc:
+        logger.warning("Anthropic client close failed: %s", exc)
+
+
 # ── App ──────────────────────────────────────────────────────────────────────
 
 app = FastAPI(
     title="Stock Signal MVP",
     description="Signal-based stock briefing pipeline for retail investors.",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
