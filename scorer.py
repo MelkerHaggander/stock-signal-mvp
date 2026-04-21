@@ -141,6 +141,7 @@ def score_signals(
             source_name=sig.source_name,
             source_headline=sig.source_headline,
             source_url=sig.source_url,
+            why_it_matters=sig.why_it_matters,
         ))
 
     # Sort order (highest priority first):
