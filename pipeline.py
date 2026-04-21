@@ -22,16 +22,6 @@ from validator import validate
 
 logger = logging.getLogger(__name__)
 
-# ── Shared Anthropic client ─────────────────────────────────────────────────
-# Module-level singleton. Reused across all pipeline runs so the httpx
-# connection pool and TLS session to api.anthropic.com stay warm, and the
-# Anthropic SDK is only initialised once per process.
-# The app pre-warms this client at startup (see main.py lifespan) so the
-# first real analysis does not pay the cold-start cost.
-# max_retries=0 keeps SDK retries disabled – we handle retries explicitly in
-# classifier.py and synthesizer.py to avoid multiplying request volume.
-_client = anthropic.AsyncAnthropic(max_retries=0)
-
 
 def _build_sources(scored_signals) -> list[SourceReference]:
     """Build deduplicated source references from scored signals."""
@@ -49,7 +39,6 @@ def _build_sources(scored_signals) -> list[SourceReference]:
             source=s.source_name,
             url=s.source_url,
             published_at=s.published_at,
-            why_it_matters=s.why_it_matters,
         ))
     return sources
 
@@ -66,7 +55,7 @@ async def run_pipeline_full(query: str, language: str = "english") -> tuple:
     """
     from models import NormalizedData, ScoredSignal  # avoid circular at module level
     t0 = time.monotonic()
-    client = _client
+    client = anthropic.AsyncAnthropic(max_retries=0)
 
     asset = identify(query)
     # News text (required) and financial data (optional) are fetched in parallel
@@ -76,7 +65,7 @@ async def run_pipeline_full(query: str, language: str = "english") -> tuple:
     )
     data = normalize(raw_text)
     data = filter_noise(data)
-    signals = await classify_signals(data, client, language)
+    signals = await classify_signals(data, client)
     scored = score_signals(signals)
 
     if not scored:
@@ -123,7 +112,7 @@ async def run_pipeline(query: str, language: str = "english") -> PipelineRespons
     Returns a PipelineResponse ready for the frontend.
     """
     t0 = time.monotonic()
-    client = _client
+    client = anthropic.AsyncAnthropic(max_retries=0)
 
     # Step 1 – Identify
     logger.info("Step 1: Identifying asset from '%s'", query)
@@ -147,7 +136,7 @@ async def run_pipeline(query: str, language: str = "english") -> PipelineRespons
 
     # Step 5 – Classify (LLM)
     logger.info("Step 5: Classifying signals via LLM")
-    signals = await classify_signals(data, client, language)
+    signals = await classify_signals(data, client)
     logger.info("  -> %d signals classified", len(signals))
 
     # Step 6 – Score
