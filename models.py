@@ -88,6 +88,11 @@ class ClassifiedSignal(BaseModel):
     source_name: str = ""
     source_headline: str = ""
     source_url: str = ""
+    # Mechanism-level explanation of how this event affects the company's
+    # fundamentals. Generated in the classification step (LLM) alongside
+    # the structural classification. Language follows the pipeline's
+    # output_language. Empty string when unavailable.
+    why_it_matters: str = ""
 
 
 # -- Step 6 --
@@ -104,6 +109,7 @@ class ScoredSignal(BaseModel):
     source_name: str = ""
     source_headline: str = ""
     source_url: str = ""
+    why_it_matters: str = ""
 
 
 # -- Step 7 --
@@ -139,6 +145,7 @@ class SourceReference(BaseModel):
     source: str
     url: str
     published_at: str
+    why_it_matters: str = ""
 
 
 # -- Final API response --
