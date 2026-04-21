@@ -7,7 +7,7 @@ classification -> scoring -> synthesis -> validation.
 from __future__ import annotations
 
 import hashlib
-from datetime import datetime, timezone
+from datetime import datetime
 from enum import Enum
 from typing import Optional
 
@@ -71,9 +71,7 @@ class NewsItem(BaseModel):
 class NormalizedData(BaseModel):
     asset: Asset
     news: list[NewsItem]
-    collected_at: str = Field(
-        default_factory=lambda: datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    )
+    collected_at: str = Field(default_factory=lambda: datetime.utcnow().isoformat() + "Z")
 
 
 # -- Step 5 --
@@ -88,11 +86,6 @@ class ClassifiedSignal(BaseModel):
     source_name: str = ""
     source_headline: str = ""
     source_url: str = ""
-    # Mechanism-level explanation of how this event affects the company's
-    # fundamentals. Generated in the classification step (LLM) alongside
-    # the structural classification. Language follows the pipeline's
-    # output_language. Empty string when unavailable.
-    why_it_matters: str = ""
 
 
 # -- Step 6 --
@@ -109,7 +102,6 @@ class ScoredSignal(BaseModel):
     source_name: str = ""
     source_headline: str = ""
     source_url: str = ""
-    why_it_matters: str = ""
 
 
 # -- Step 7 --
@@ -145,7 +137,6 @@ class SourceReference(BaseModel):
     source: str
     url: str
     published_at: str
-    why_it_matters: str = ""
 
 
 # -- Final API response --
