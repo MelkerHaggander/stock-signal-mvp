@@ -49,6 +49,7 @@ def _build_sources(scored_signals) -> list[SourceReference]:
             source=s.source_name,
             url=s.source_url,
             published_at=s.published_at,
+            why_it_matters=s.why_it_matters,
         ))
     return sources
 
@@ -75,7 +76,7 @@ async def run_pipeline_full(query: str, language: str = "english") -> tuple:
     )
     data = normalize(raw_text)
     data = filter_noise(data)
-    signals = await classify_signals(data, client)
+    signals = await classify_signals(data, client, language)
     scored = score_signals(signals)
 
     if not scored:
@@ -146,7 +147,7 @@ async def run_pipeline(query: str, language: str = "english") -> PipelineRespons
 
     # Step 5 – Classify (LLM)
     logger.info("Step 5: Classifying signals via LLM")
-    signals = await classify_signals(data, client)
+    signals = await classify_signals(data, client, language)
     logger.info("  -> %d signals classified", len(signals))
 
     # Step 6 – Score
