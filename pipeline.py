@@ -22,6 +22,16 @@ from validator import validate
 
 logger = logging.getLogger(__name__)
 
+# ── Shared Anthropic client ─────────────────────────────────────────────────
+# Module-level singleton. Reused across all pipeline runs so the httpx
+# connection pool and TLS session to api.anthropic.com stay warm, and the
+# Anthropic SDK is only initialised once per process.
+# The app pre-warms this client at startup (see main.py lifespan) so the
+# first real analysis does not pay the cold-start cost.
+# max_retries=0 keeps SDK retries disabled – we handle retries explicitly in
+# classifier.py and synthesizer.py to avoid multiplying request volume.
+_client = anthropic.AsyncAnthropic(max_retries=0)
+
 
 def _build_sources(scored_signals) -> list[SourceReference]:
     """Build deduplicated source references from scored signals."""
@@ -55,7 +65,7 @@ async def run_pipeline_full(query: str, language: str = "english") -> tuple:
     """
     from models import NormalizedData, ScoredSignal  # avoid circular at module level
     t0 = time.monotonic()
-    client = anthropic.AsyncAnthropic(max_retries=0)
+    client = _client
 
     asset = identify(query)
     # News text (required) and financial data (optional) are fetched in parallel
@@ -112,7 +122,7 @@ async def run_pipeline(query: str, language: str = "english") -> PipelineRespons
     Returns a PipelineResponse ready for the frontend.
     """
     t0 = time.monotonic()
-    client = anthropic.AsyncAnthropic(max_retries=0)
+    client = _client
 
     # Step 1 – Identify
     logger.info("Step 1: Identifying asset from '%s'", query)
