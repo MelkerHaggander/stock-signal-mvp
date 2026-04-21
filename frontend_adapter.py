@@ -47,50 +47,18 @@ def _fmt_price(value: float, currency: str) -> str:
 
 
 def _extract_title_and_body(text: str) -> tuple[str, str]:
-    """
-    Split synthesized text into (title, body) at the first sentence break.
-    Falls back gracefully when the text has no clean break — ensures the
-    frontend always has something meaningful to render in both slots.
-    """
+    """Split synthesized text into (title, body) at the first sentence break."""
     text = text.strip()
-    if not text:
-        return "", ""
-
-    # Try common sentence terminators in order of preference.
-    for sep in (". ", ".\n", "! ", "!\n", "? ", "?\n", ".\t"):
+    for sep in [". ", ".\n"]:
         idx = text.find(sep)
         if idx > 0:
-            return text[:idx].strip(), text[idx + len(sep):].strip()
-
-    # Single-sentence text: use the whole thing as title and put it in body too
-    # so the UI has content to show. This is better than leaving body empty.
-    if len(text) <= 120:
-        return text, ""
-    # Long unbroken text: split at midpoint on a word boundary.
-    mid = len(text) // 2
-    space = text.rfind(" ", 0, mid)
-    if space > 0:
-        return text[:space].strip(), text[space + 1:].strip()
+            return text[:idx], text[idx + 2:].strip()
     return text, ""
 
 
 def _split_monitoring(text: str) -> tuple[str, str]:
-    """
-    Split the monitoring section into short-term and long-term parts.
-    Looks for language-specific markers; falls back to a midpoint split.
-    """
     lower = text.lower()
-    markers = (
-        # Swedish
-        "lång sikt", "lang sikt", "långsikt", "langsikt", "på lång sikt",
-        "90+ dagar", "över 90 dagar",
-        # English
-        "long term", "long-term", "longer term", "longer-term",
-        "over the long", "in the long run",
-        # Danish
-        "lang sigt", "på lang sigt", "langsigt",
-    )
-    for marker in markers:
+    for marker in ["lang sikt", "long term", "90+ dagar", "long-term", "langsikt"]:
         idx = lower.find(marker)
         if idx != -1:
             split = text.rfind(".", 0, idx)
@@ -183,7 +151,6 @@ def build_frontend_payload(
             "title": src.headline or src.type,
             "subtitle": src.source,
             "href": src.url or "#",
-            "whyItMatters": src.why_it_matters,
         })
     if not sources:
         sources.append({
@@ -191,7 +158,6 @@ def build_frontend_payload(
             "title": "Data source",
             "subtitle": "Pipeline",
             "href": "#",
-            "whyItMatters": "",
         })
 
     return {
