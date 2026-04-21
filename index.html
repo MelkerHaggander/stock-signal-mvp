@@ -1214,11 +1214,6 @@
         if (!res.ok) throw new Error(`Backend responded with ${res.status}`);
         return res.json();
       },
-      async search(query) {
-        const res = await fetch(`${CONFIG.API_BASE_URL}/api/search?q=${encodeURIComponent(query)}`);
-        if (!res.ok) throw new Error(`Backend responded with ${res.status}`);
-        return res.json();
-      },
     };
 
     async function fetchStockData(ticker) {
@@ -1228,21 +1223,6 @@
       } catch (err) {
         console.warn('Backend unavailable, falling back to static data.', err);
         return stockData[ticker] || null;
-      }
-    }
-
-    async function fetchSearchData(query) {
-      if (!CONFIG.USE_BACKEND) {
-        const normalized = normalizeSearchValue(query);
-        const map = { 'NVDA': 'NVDA', 'NVIDIA': 'NVDA', 'INVE-B': 'INVE-B', 'INVESTOR B': 'INVE-B', 'NOVO B': 'NOVO-B', 'NOVO-B': 'NOVO-B' };
-        const hit = map[normalized];
-        return hit ? stockData[hit] : null;
-      }
-      try {
-        return await api.search(query);
-      } catch (err) {
-        console.warn('Backend unavailable.', err);
-        return null;
       }
     }
     // ============================================================
