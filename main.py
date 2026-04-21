@@ -134,21 +134,6 @@ async def get_stock(ticker: str):
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
-@app.get("/api/search")
-async def search_stock(q: str = ""):
-    """Search by company name or ticker, return frontend-compatible JSON."""
-    if not q.strip():
-        raise HTTPException(status_code=400, detail="Query parameter 'q' is required.")
-    try:
-        async with _PIPELINE_LOCK:
-            response, raw_text, scored, financial_data = await run_pipeline_full(q.strip())
-        return build_frontend_payload(raw_text, response, scored, financial_data)
-    except ValueError as exc:
-        raise HTTPException(status_code=404, detail=str(exc))
-    except Exception as exc:
-        logger.exception("Error in /api/search?q=%s", q)
-        raise HTTPException(status_code=500, detail="Internal server error")
-
 # ── Frontend ────────────────────────────────────────────────────────────────
 
 @app.get("/")
