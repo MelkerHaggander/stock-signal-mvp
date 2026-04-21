@@ -183,6 +183,7 @@ def build_frontend_payload(
             "title": src.headline or src.type,
             "subtitle": src.source,
             "href": src.url or "#",
+            "whyItMatters": src.why_it_matters,
         })
     if not sources:
         sources.append({
@@ -190,6 +191,7 @@ def build_frontend_payload(
             "title": "Data source",
             "subtitle": "Pipeline",
             "href": "#",
+            "whyItMatters": "",
         })
 
     return {
