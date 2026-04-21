@@ -135,21 +135,35 @@
 
     .stock-pills {
       display: flex;
-      gap: 5px;
+      gap: 6px;
+      flex-shrink: 0;
     }
 
     .pill {
-      padding: 5px 13px;
+      padding: 6px 14px;
       border: 1px solid var(--line);
       border-radius: 99px;
       background: rgba(255, 255, 255, 0.8);
       font-size: 12px;
       font-weight: 600;
-      font-family: 'JetBrains Mono', monospace;
-      color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+      color: var(--navy);
       cursor: pointer;
       transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
-      letter-spacing: 0.02em;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+    }
+
+    .pill-ticker {
+      font-size: 10px;
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+      opacity: 0.85;
+      transition: color 0.2s ease, opacity 0.2s ease;
     }
 
     .pill:hover {
@@ -160,63 +174,16 @@
       box-shadow: 0 4px 12px rgba(15, 26, 46, 0.15);
     }
 
+    .pill:hover .pill-ticker,
+    .pill.active .pill-ticker {
+      color: var(--white);
+      opacity: 0.75;
+    }
+
     .pill.active {
       background: var(--navy);
       color: var(--white);
       border-color: var(--navy);
-    }
-
-    .nav-search {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      flex-shrink: 0;
-    }
-
-    .nav-search input {
-      padding: 9px 16px;
-      border: 1px solid var(--line);
-      border-radius: 99px;
-      outline: none;
-      min-width: 220px;
-      background: rgba(255, 255, 255, 0.9);
-      font-family: 'DM Sans', sans-serif;
-      font-size: 13px;
-      color: var(--text);
-      transition: border-color 0.2s ease, box-shadow 0.2s ease, min-width 0.3s ease;
-    }
-
-    .nav-search input:focus {
-      border-color: var(--blue);
-      box-shadow: 0 0 0 4px rgba(26, 86, 219, 0.07);
-      min-width: 260px;
-    }
-
-    .nav-search input::placeholder {
-      color: #94a3b8;
-    }
-
-    .nav-search button {
-      border: none;
-      background: linear-gradient(135deg, var(--navy), #1e3a5f);
-      color: white;
-      border-radius: 99px;
-      padding: 9px 20px;
-      font-family: 'DM Sans', sans-serif;
-      font-weight: 600;
-      font-size: 13px;
-      cursor: pointer;
-      transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
-      white-space: nowrap;
-    }
-
-    .nav-search button:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 14px rgba(15, 26, 46, 0.2);
-    }
-
-    .nav-search button:active {
-      transform: translateY(0);
     }
 
     /* ── Container & Status ────────────────────────── */
@@ -269,79 +236,173 @@
       animation: spin 0.6s linear infinite;
     }
 
-    /* ── Empty state ───────────────────────────────── */
+    /* ── Empty state / Landing ─────────────────────── */
 
     .empty-state {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 100px 24px;
+      padding: 48px 0 40px;
       animation: fadeUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
     }
 
-    .empty-state-icon {
-      width: 64px;
-      height: 64px;
+    .intro-hero {
+      text-align: center;
+      max-width: 680px;
+      margin: 0 auto 56px;
+    }
+
+    .intro-hero .label {
+      display: inline-block;
+      margin-bottom: 16px;
+    }
+
+    .intro-hero h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 46px;
+      line-height: 1.08;
+      color: var(--navy);
+      letter-spacing: -1.2px;
+      margin-bottom: 16px;
+    }
+
+    .intro-lead {
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.6;
+      max-width: 560px;
+      margin: 0 auto;
+    }
+
+    .how-it-works {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-bottom: 48px;
+      animation: fadeUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
+    }
+
+    .step {
+      background: rgba(255, 255, 255, 0.75);
+      border: 1px solid var(--line);
       border-radius: 16px;
+      padding: 22px 22px 20px;
+      text-align: left;
+      transition: border-color 0.2s ease, transform 0.2s ease;
+    }
+
+    .step:hover {
+      border-color: rgba(26, 86, 219, 0.35);
+      transform: translateY(-2px);
+    }
+
+    .step-num {
+      width: 30px;
+      height: 30px;
+      border-radius: 9px;
       background: var(--soft-blue);
+      color: var(--blue);
+      font-weight: 700;
+      font-size: 13px;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-bottom: 20px;
-    }
-
-    .empty-state-icon svg {
-      width: 28px;
-      height: 28px;
-      stroke: var(--blue);
-      fill: none;
-      stroke-width: 1.5;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-
-    .empty-state h2 {
-      font-family: 'DM Serif Display', serif;
-      font-size: 28px;
-      color: var(--navy);
-      margin-bottom: 8px;
-      letter-spacing: -0.5px;
-    }
-
-    .empty-state p {
-      color: var(--muted);
-      font-size: 15px;
-      max-width: 400px;
-      line-height: 1.6;
-    }
-
-    .empty-state .supported-tickers {
-      display: flex;
-      gap: 6px;
-      margin-top: 20px;
-    }
-
-    .empty-state .supported-tickers button {
-      padding: 6px 16px;
-      border: 1px solid var(--line);
-      border-radius: 99px;
-      background: rgba(255, 255, 255, 0.85);
-      font-size: 12px;
-      font-weight: 600;
+      margin-bottom: 14px;
       font-family: 'JetBrains Mono', monospace;
-      color: var(--muted);
-      cursor: pointer;
-      transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
     }
 
-    .empty-state .supported-tickers button:hover {
-      background: var(--navy);
-      color: var(--white);
-      border-color: var(--navy);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(15, 26, 46, 0.15);
+    .step h3 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 19px;
+      color: var(--navy);
+      margin-bottom: 6px;
+      letter-spacing: -0.3px;
+      line-height: 1.2;
+    }
+
+    .step p {
+      font-size: 13.5px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .company-picker {
+      animation: fadeUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both;
+    }
+
+    .picker-label {
+      text-align: center;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 2.5px;
+      color: var(--blue);
+      text-transform: uppercase;
+      margin-bottom: 18px;
+    }
+
+    .company-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+
+    .company-card {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+      padding: 22px 24px 20px;
+      background: rgba(255, 255, 255, 0.95);
+      border: 1.5px solid var(--line);
+      border-radius: 18px;
+      cursor: pointer;
+      text-align: left;
+      font-family: 'DM Sans', sans-serif;
+      transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+      box-shadow: var(--shadow-card);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .company-card::after {
+      content: '→';
+      position: absolute;
+      top: 20px;
+      right: 22px;
+      font-size: 18px;
+      color: var(--muted);
+      transition: transform 0.25s ease, color 0.25s ease;
+    }
+
+    .company-card:hover {
+      border-color: var(--blue);
+      transform: translateY(-3px);
+      box-shadow: 0 18px 32px rgba(15, 26, 46, 0.08);
+    }
+
+    .company-card:hover::after {
+      transform: translateX(4px);
+      color: var(--blue);
+    }
+
+    .company-card-ticker {
+      font-size: 10px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--blue);
+      letter-spacing: 0.08em;
+      margin-bottom: 4px;
+    }
+
+    .company-card-name {
+      font-family: 'DM Serif Display', serif;
+      font-size: 22px;
+      color: var(--navy);
+      letter-spacing: -0.3px;
+      line-height: 1.2;
+    }
+
+    .company-card-meta {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 6px;
     }
 
     /* ── Hero ───────────────────────────────────────── */
@@ -795,10 +856,16 @@
         grid-template-columns: 1fr;
       }
 
-      .nav-links,
-      .stock-pills {
+      .nav-links {
         display: none;
       }
+
+      .how-it-works,
+      .company-cards {
+        grid-template-columns: 1fr;
+      }
+
+      .intro-hero h1 { font-size: 36px; }
 
       .hero h1 { font-size: 36px; }
       .hero h1 .ticker { font-size: 20px; }
@@ -807,25 +874,24 @@
 
     @media (max-width: 640px) {
       .navbar {
-        flex-direction: column;
-        align-items: stretch;
         padding: 10px 16px;
+        gap: 10px;
       }
 
-      .nav-left,
-      .nav-search,
+      .stock-pills {
+        overflow-x: auto;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .stock-pills::-webkit-scrollbar {
+        display: none;
+      }
+
       .hero {
         flex-direction: column;
         align-items: stretch;
       }
-
-      .nav-search input,
-      .nav-search button {
-        width: 100%;
-      }
-
-      .nav-search input { min-width: 0; }
-      .nav-search input:focus { min-width: 0; }
 
       .hero-right { text-align: left; }
       .container { padding: 20px 14px 60px; }
@@ -837,32 +903,36 @@
       .card,
       .signal-section { padding: 18px; }
 
-      .empty-state { padding: 60px 16px; }
-      .empty-state h2 { font-size: 24px; }
+      .empty-state { padding: 28px 0 40px; }
+      .intro-hero { margin-bottom: 40px; }
+      .intro-hero h1 { font-size: 30px; }
+      .how-it-works { margin-bottom: 36px; }
+      .company-card { padding: 20px; }
+      .company-card-name { font-size: 20px; }
     }
   </style>
 </head>
 
 <body>
   <nav class="navbar" id="navbar">
-    <div class="nav-left">
-      <div class="nav-links">
-        <a onclick="scrollToSection('what-matters')">What matters now</a>
-        <a onclick="scrollToSection('value-drivers')">Value drivers</a>
-        <a onclick="scrollToSection('monitoring')">Monitoring</a>
-        <a onclick="scrollToSection('conclusion')">Conclusion</a>
-      </div>
-
-      <div class="stock-pills">
-        <button class="pill" data-ticker="NVDA" onclick="loadStock('NVDA')">NVDA</button>
-        <button class="pill" data-ticker="INVE-B" onclick="loadStock('INVE-B')">INVE-B</button>
-        <button class="pill" data-ticker="NOVO-B" onclick="loadStock('NOVO-B')">NOVO-B</button>
-      </div>
+    <div class="nav-links">
+      <a onclick="scrollToSection('what-matters')">What matters now</a>
+      <a onclick="scrollToSection('value-drivers')">Value drivers</a>
+      <a onclick="scrollToSection('monitoring')">Monitoring</a>
+      <a onclick="scrollToSection('conclusion')">Conclusion</a>
+      <a onclick="scrollToSection('sources')">Sources</a>
     </div>
 
-    <div class="nav-search">
-      <input type="text" id="searchInput" placeholder="Search company or ticker…" aria-label="Search company or ticker" />
-      <button type="button" onclick="handleSearch()">Analyze</button>
+    <div class="stock-pills" role="group" aria-label="Select a company to analyze">
+      <button class="pill" data-ticker="NVDA" onclick="loadStock('NVDA')">
+        NVIDIA<span class="pill-ticker">NVDA</span>
+      </button>
+      <button class="pill" data-ticker="INVE-B" onclick="loadStock('INVE-B')">
+        Investor B<span class="pill-ticker">INVE-B</span>
+      </button>
+      <button class="pill" data-ticker="NOVO-B" onclick="loadStock('NOVO-B')">
+        Novo Nordisk<span class="pill-ticker">NOVO-B</span>
+      </button>
     </div>
   </nav>
 
@@ -870,15 +940,49 @@
     <div id="statusBanner" class="status-banner" role="status" aria-live="polite"></div>
 
     <div id="emptyState" class="empty-state">
-      <div class="empty-state-icon">
-        <svg viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      <div class="intro-hero">
+        <span class="label">Stock signals</span>
+        <h1>Understand what's moving a stock — without the jargon</h1>
+        <p class="intro-lead">We read company reports and financial filings, then summarize the signals that matter for retail investors. No buy or sell calls. Just a clear picture you can act on.</p>
       </div>
-      <h2>Search for a company</h2>
-      <p>Enter a company name or ticker above to generate a signal-based analysis.</p>
-      <div class="supported-tickers">
-        <button onclick="loadStock('NVDA')">NVDA</button>
-        <button onclick="loadStock('INVE-B')">INVE-B</button>
-        <button onclick="loadStock('NOVO-B')">NOVO-B</button>
+
+      <div class="how-it-works" aria-label="How it works">
+        <div class="step">
+          <div class="step-num">1</div>
+          <h3>Pick a company</h3>
+          <p>Choose one of the three companies available — in the navigation bar or below.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <h3>Read the signals</h3>
+          <p>See what matters right now, what drives company value, and what to watch next.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <h3>Check the sources</h3>
+          <p>Every claim links back to its source — so you can verify and decide for yourself.</p>
+        </div>
+      </div>
+
+      <div class="company-picker">
+        <p class="picker-label">Select a company to analyze</p>
+        <div class="company-cards">
+          <button class="company-card" onclick="loadStock('NVDA')" aria-label="Analyze NVIDIA">
+            <span class="company-card-ticker">NVDA</span>
+            <span class="company-card-name">NVIDIA</span>
+            <span class="company-card-meta">US · Nasdaq</span>
+          </button>
+          <button class="company-card" onclick="loadStock('INVE-B')" aria-label="Analyze Investor B">
+            <span class="company-card-ticker">INVE-B</span>
+            <span class="company-card-name">Investor B</span>
+            <span class="company-card-meta">SE · Nasdaq Stockholm</span>
+          </button>
+          <button class="company-card" onclick="loadStock('NOVO-B')" aria-label="Analyze Novo Nordisk">
+            <span class="company-card-ticker">NOVO-B</span>
+            <span class="company-card-name">Novo Nordisk</span>
+            <span class="company-card-meta">DK · Nasdaq Copenhagen</span>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -968,7 +1072,7 @@
         <p id="conclusionText"></p>
       </div>
 
-      <div class="sources-section animate-up">
+      <div class="sources-section animate-up" id="sources">
         <h2>Sources</h2>
         <div class="sources-grid" id="sourcesGrid"></div>
       </div>
@@ -1110,11 +1214,6 @@
         if (!res.ok) throw new Error(`Backend responded with ${res.status}`);
         return res.json();
       },
-      async search(query) {
-        const res = await fetch(`${CONFIG.API_BASE_URL}/api/search?q=${encodeURIComponent(query)}`);
-        if (!res.ok) throw new Error(`Backend responded with ${res.status}`);
-        return res.json();
-      },
     };
 
     async function fetchStockData(ticker) {
@@ -1124,21 +1223,6 @@
       } catch (err) {
         console.warn('Backend unavailable, falling back to static data.', err);
         return stockData[ticker] || null;
-      }
-    }
-
-    async function fetchSearchData(query) {
-      if (!CONFIG.USE_BACKEND) {
-        const normalized = normalizeSearchValue(query);
-        const map = { 'NVDA': 'NVDA', 'NVIDIA': 'NVDA', 'INVE-B': 'INVE-B', 'INVESTOR B': 'INVE-B', 'NOVO B': 'NOVO-B', 'NOVO-B': 'NOVO-B' };
-        const hit = map[normalized];
-        return hit ? stockData[hit] : null;
-      }
-      try {
-        return await api.search(query);
-      } catch (err) {
-        console.warn('Backend unavailable.', err);
-        return null;
       }
     }
     // ============================================================
@@ -1253,12 +1337,21 @@
       updateChart(d);
     }
 
+    // Display names for tickers — used in loading status so the user
+    // always sees which stock is being analyzed.
+    const TICKER_DISPLAY_NAMES = {
+      'NVDA': 'NVIDIA',
+      'INVE-B': 'Investor B',
+      'NOVO-B': 'Novo Nordisk',
+    };
+
     async function loadStock(ticker) {
-      setStatus('Loading…', 'loading');
+      const displayName = TICKER_DISPLAY_NAMES[ticker] || ticker;
+      setStatus(`Loading ${displayName} (${ticker})…`, 'loading');
       const d = await fetchStockData(ticker);
 
       if (!d) {
-        setStatus('Could not load the company.', 'warning');
+        setStatus(`Could not load ${displayName}.`, 'warning');
         return;
       }
 
@@ -1268,7 +1361,6 @@
 
     function updateChart(d) {
       const canvas = document.getElementById('stockChart');
-      if (!canvas) return;
 
       if (currentChart) currentChart.destroy();
 
@@ -1340,35 +1432,6 @@
       });
     }
 
-    function normalizeSearchValue(value) {
-      return value.trim().toUpperCase().replace(/\s+/g, ' ')
-        .replace('NVIDIA CORP', 'NVIDIA')
-        .replace('NOVO NORDISK B', 'NOVO B')
-        .replace('NOVO-B', 'NOVO B');
-    }
-
-    async function handleSearch() {
-      const rawValue = document.getElementById('searchInput').value;
-      if (!rawValue.trim()) { setStatus('Enter a company name or ticker.', 'warning'); return; }
-
-      if (CONFIG.USE_BACKEND) {
-        setStatus('Searching…', 'loading');
-        const d = await fetchSearchData(rawValue);
-        if (d) { setStatus(''); renderStock(d); }
-        else { setStatus('Not found. Check the ticker or company name.', 'warning'); }
-        return;
-      }
-
-      const value = normalizeSearchValue(rawValue);
-      if (value.includes('NVDA') || value.includes('NVIDIA')) { loadStock('NVDA'); return; }
-      if (value.includes('INVE') || value.includes('INVESTOR')) { loadStock('INVE-B'); return; }
-      if (value.includes('NOVO') || value.includes('NORDISK')) { loadStock('NOVO-B'); return; }
-      setStatus('In static mode only NVDA, INVE-B, and NOVO-B are supported.', 'warning');
-    }
-
-    document.getElementById('searchInput').addEventListener('keydown', e => {
-      if (e.key === 'Enter') handleSearch();
-    });
   </script>
 </body>
 
