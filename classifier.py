@@ -18,7 +18,9 @@ from prompts import CLASSIFICATION_SYSTEM_PROMPT, CLASSIFICATION_USER_TEMPLATE
 logger = logging.getLogger(__name__)
 
 _MODEL = "claude-sonnet-4-20250514"
-_MAX_TOKENS = 4096
+# Bumped from 4096 to 6144 to accommodate the per-signal why_it_matters
+# explanation (~60 tokens each) for feeds with many detected signals.
+_MAX_TOKENS = 6144
 _TEMPERATURE = 0.0
 _MAX_RETRIES = 2
 _RETRY_BASE_DELAY = 2.0  # seconds — doubles each retry (2s, 4s)
@@ -27,10 +29,15 @@ _RETRY_BASE_DELAY = 2.0  # seconds — doubles each retry (2s, 4s)
 async def classify_signals(
     data: NormalizedData,
     client: anthropic.AsyncAnthropic,
+    language: str = "english",
 ) -> list[ClassifiedSignal]:
     """
     Send all news items to Claude in a single batched request for signal classification.
     Returns a flat list of all detected signals.
+
+    `language` controls the natural-language `why_it_matters` field that the LLM
+    produces for each signal. Structural fields (type, subtype, ids) are
+    language-independent.
     """
     if not data.news:
         return []
@@ -64,11 +71,14 @@ async def classify_signals(
 
     data_points_xml = "\n".join(xml_parts)
 
+    system_prompt = CLASSIFICATION_SYSTEM_PROMPT.format(output_language=language)
+
     user_msg = CLASSIFICATION_USER_TEMPLATE.format(
         symbol=data.asset.symbol,
         company_name=data.asset.name,
         data_points_xml=data_points_xml,
         detected_at=now,
+        output_language=language,
     )
 
     for attempt in range(_MAX_RETRIES + 1):
@@ -77,7 +87,7 @@ async def classify_signals(
                 model=_MODEL,
                 max_tokens=_MAX_TOKENS,
                 temperature=_TEMPERATURE,
-                system=CLASSIFICATION_SYSTEM_PROMPT,
+                system=system_prompt,
                 messages=[{"role": "user", "content": user_msg}],
             )
             raw = response.content[0].text.strip()
@@ -99,6 +109,9 @@ async def classify_signals(
                         source_name=meta.get("source_name", ""),
                         source_headline=meta.get("source_headline", ""),
                         source_url=meta.get("source_url", ""),
+                        # Defensive: tolerate missing field rather than crash on old
+                        # prompt responses or partial JSON.
+                        why_it_matters=(sig.get("why_it_matters") or "").strip(),
                     ))
 
             logger.info("Batch classification: %d signals from %d data points in 1 API call",
