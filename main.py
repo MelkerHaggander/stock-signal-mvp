@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from contextlib import asynccontextmanager
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -22,7 +21,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
 from models import PipelineRequest, PipelineResponse
-from pipeline import run_pipeline, run_pipeline_full, _client
+from pipeline import run_pipeline, run_pipeline_full
 from frontend_adapter import build_frontend_payload
 
 # ── Logging ──────────────────────────────────────────────────────────────────
@@ -37,42 +36,12 @@ logger = logging.getLogger("stock-signal-mvp")
 # Only one pipeline runs at a time to avoid flooding the Anthropic API.
 _PIPELINE_LOCK = asyncio.Semaphore(1)
 
-# ── Lifespan – pre-warm Anthropic client at startup ─────────────────────────
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """
-    Pre-warm the shared Anthropic client at server startup so the first real
-    analysis does not pay the SDK-init + TCP/TLS handshake cost.
-    Uses Haiku with max_tokens=1 – negligible cost (~fractions of a cent per
-    server start). Failures are non-fatal: we log and continue so the server
-    still boots even if the warm-up call fails (e.g. transient network issue).
-    """
-    try:
-        await _client.messages.create(
-            model="claude-haiku-4-5-20251001",
-            max_tokens=1,
-            messages=[{"role": "user", "content": "hi"}],
-        )
-        logger.info("Anthropic client pre-warmed")
-    except Exception as exc:
-        logger.warning("Anthropic pre-warm failed (non-fatal): %s", exc)
-    yield
-    # Shutdown – close the shared httpx connection pool cleanly.
-    try:
-        await _client.close()
-    except Exception as exc:
-        logger.warning("Anthropic client close failed: %s", exc)
-
-
 # ── App ──────────────────────────────────────────────────────────────────────
 
 app = FastAPI(
     title="Stock Signal MVP",
     description="Signal-based stock briefing pipeline for retail investors.",
     version="1.0.0",
-    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -133,6 +102,21 @@ async def get_stock(ticker: str):
         logger.exception("Error in /api/stock/%s", ticker)
         raise HTTPException(status_code=500, detail="Internal server error")
 
+
+@app.get("/api/search")
+async def search_stock(q: str = ""):
+    """Search by company name or ticker, return frontend-compatible JSON."""
+    if not q.strip():
+        raise HTTPException(status_code=400, detail="Query parameter 'q' is required.")
+    try:
+        async with _PIPELINE_LOCK:
+            response, raw_text, scored, financial_data = await run_pipeline_full(q.strip())
+        return build_frontend_payload(raw_text, response, scored, financial_data)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except Exception as exc:
+        logger.exception("Error in /api/search?q=%s", q)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 # ── Frontend ────────────────────────────────────────────────────────────────
 
