@@ -62,3 +62,28 @@ async def fetch_financial_data(github_key: str) -> dict | None:
     except json.JSONDecodeError as exc:
         logger.warning("Invalid JSON in financial data at %s: %s", url, exc)
         return None
+
+
+async def fetch_company_report(github_key: str) -> str:
+    """
+    Fetch the raw latest quarterly report text for a given asset from GitHub.
+    Expected file name: "<github_key> Company Report" (no extension).
+
+    Returns the raw text content exactly as stored.
+    Raises RuntimeError on network or HTTP errors – the caller surfaces this
+    to the user as a 502.
+    """
+    url = f"{_BASE_URL}/{github_key} Company Report"
+    try:
+        async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
+            resp = await client.get(url)
+            resp.raise_for_status()
+            return resp.text
+    except httpx.HTTPStatusError as exc:
+        raise RuntimeError(
+            f"GitHub returned {exc.response.status_code} for {url}"
+        ) from exc
+    except httpx.RequestError as exc:
+        raise RuntimeError(
+            f"Network error fetching {url}: {exc}"
+        ) from exc
