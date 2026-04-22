@@ -24,6 +24,9 @@ from fastapi.responses import FileResponse
 from models import PipelineRequest, PipelineResponse
 from pipeline import run_pipeline, run_pipeline_full, _client
 from frontend_adapter import build_frontend_payload
+from identifier import identify
+from fetcher import fetch_company_report
+from report_summarizer import summarize_report
 
 # ── Logging ──────────────────────────────────────────────────────────────────
 
@@ -131,6 +134,44 @@ async def get_stock(ticker: str):
         raise HTTPException(status_code=404, detail=str(exc))
     except Exception as exc:
         logger.exception("Error in /api/stock/%s", ticker)
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+# ── Feature 2: Quarterly report summary ─────────────────────────────────────
+
+@app.get("/api/report/{ticker}")
+async def get_company_report(ticker: str):
+    """
+    Fetch the latest quarterly report from GitHub for the given ticker and
+    return an LLM-interpreted summary suitable for a retail investor.
+
+    The summary is produced by a single Claude call (see report_summarizer.py)
+    and reuses the same shared client + pipeline semaphore as /api/stock, so
+    concurrent report requests do not flood the Anthropic API.
+    """
+    try:
+        asset = identify(ticker)
+        async with _PIPELINE_LOCK:
+            logger.info("Fetching quarterly report for %s", asset.github_key)
+            report_text = await fetch_company_report(asset.github_key)
+            logger.info("  -> %d chars fetched", len(report_text))
+            summary = await summarize_report(
+                report_text=report_text,
+                symbol=asset.symbol,
+                company_name=asset.name,
+                language="english",
+                client=_client,
+            )
+        return summary.model_dump()
+    except ValueError as exc:
+        # Unknown ticker
+        raise HTTPException(status_code=404, detail=str(exc))
+    except RuntimeError as exc:
+        # GitHub fetch failure or repeated LLM failure
+        logger.error("Report pipeline error for %s: %s", ticker, exc)
+        raise HTTPException(status_code=502, detail=str(exc))
+    except Exception:
+        logger.exception("Unexpected error in /api/report/%s", ticker)
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
