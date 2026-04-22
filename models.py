@@ -164,3 +164,26 @@ class PipelineResponse(BaseModel):
 class PipelineRequest(BaseModel):
     query: str
     language: str = "english"
+
+
+# -- Feature 2: Quarterly report summary --
+
+class ReportMetric(BaseModel):
+    label: str
+    value: str
+    interpretation: str
+
+
+class ReportSummary(BaseModel):
+    ticker: str
+    company_name: str
+    generated_at: str
+    # Overall verdict – one of "strong", "mixed", "weak".
+    # Used by the frontend to render a colored verdict chip.
+    verdict: str
+    headline: str
+    overview: str
+    key_metrics: list[ReportMetric] = []
+    positives: list[str] = []
+    concerns: list[str] = []
+    bottom_line: str = ""
