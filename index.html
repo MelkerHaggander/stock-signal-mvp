@@ -682,6 +682,39 @@
       line-height: 1.75;
     }
 
+    /* Value drivers as a structured, skim-readable list. Each item gets a
+       short heading and a one-sentence description, anchored by an amber
+       left border to echo the section tag. */
+    .drivers-list {
+      list-style: none;
+      padding: 0;
+      margin: 6px 0 0;
+      display: grid;
+      gap: 14px;
+    }
+
+    .drivers-list li {
+      border-left: 3px solid var(--accent);
+      padding: 4px 0 4px 14px;
+    }
+
+    .drivers-list .driver-heading {
+      display: block;
+      font-family: 'DM Serif Display', serif;
+      font-size: 17px;
+      color: var(--navy);
+      letter-spacing: -0.2px;
+      line-height: 1.3;
+      margin-bottom: 4px;
+    }
+
+    .drivers-list .driver-desc {
+      display: block;
+      font-size: 13.5px;
+      color: #475569;
+      line-height: 1.6;
+    }
+
     .monitoring-cols {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -1033,6 +1066,30 @@
       word-break: break-word;
     }
 
+    /* Comparison line: prior-period figure with delta. Sits visually between
+       the current value and the plain-language interpretation. */
+    .report-metric-comparison {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11.5px;
+      color: var(--muted);
+      margin-bottom: 8px;
+      line-height: 1.5;
+      word-break: break-word;
+      padding-top: 4px;
+      border-top: 1px dashed rgba(15, 26, 46, 0.08);
+    }
+
+    .report-metric-comparison::before {
+      content: 'vs ';
+      font-family: 'DM Sans', sans-serif;
+      font-size: 9.5px;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: var(--blue);
+      margin-right: 4px;
+    }
+
     .report-metric-interp {
       font-size: 13px;
       color: #475569;
@@ -1373,7 +1430,7 @@
         <div class="signal-section animate-up stagger-4" id="value-drivers">
           <div class="section-tag amber">Drivers</div>
           <h2>What drives company value</h2>
-          <p id="drivers-text"></p>
+          <ul class="drivers-list" id="drivers-list"></ul>
         </div>
 
         <div class="signal-section animate-up stagger-5" id="monitoring">
@@ -1434,12 +1491,18 @@
           title: 'Record Q4 FY2026 — $68.1B revenue, Blackwell ramp accelerates',
           text: 'NVIDIA reported Q4 FY2026 revenue of $68.1B (+73% YoY) and diluted EPS of $1.76 (+97% YoY). Data Center revenue was $62.3B, representing 91.5% of total sales. The Blackwell architecture now represents the majority of Data Center revenue. Full-year FY2026 revenue reached $215.9B (+65%). The company guided Q1 FY2027 revenue to $78B (+77% YoY). However, export controls have effectively foreclosed the China data center market, and the Groq IP license ($14.4B goodwill) adds integration risk.'
         },
-        drivers: 'Company value is driven by insatiable demand for AI infrastructure. Data Center accounted for 91.5% of Q4 revenue. The Blackwell Ultra and upcoming Rubin platform sustain the one-year architecture cadence. Gross margin of 71.1% (FY26) and operating cash flow of $102.7B demonstrate massive profitability at scale. Key risks include export controls (China effectively foreclosed), customer concentration (top 2 direct customers = 36% of revenue), and the $13B Groq license.',
+        drivers: [
+          { heading: 'AI infrastructure demand', description: 'Insatiable demand for AI capacity drives the top line; Data Center alone was 91.5% of Q4 revenue.' },
+          { heading: 'Architecture cadence', description: 'Blackwell Ultra now and the upcoming Rubin platform sustain the one-year refresh that keeps NVIDIA ahead.' },
+          { heading: 'Profitability at scale', description: 'Gross margin of 71.1% (FY26) and $102.7B in operating cash flow show the franchise compounds at scale.' },
+          { heading: 'Customer concentration', description: 'Top two direct customers represent 36% of revenue — a real risk if hyperscaler capex slows.' },
+          { heading: 'Export-control overhang', description: 'US export controls have effectively closed the China data-center market and remain a recurring overhang.' }
+        ],
         monShort: 'Q1 FY2027 results and guidance confirmation ($78B revenue target) are the immediate focus. Supply constraints are expected to be a Gaming headwind. The USG replacement rule for AI Diffusion export controls remains pending, creating regulatory uncertainty.',
         monLong: 'The long-term case depends on whether AI capex sustains its trajectory — the $7T data center funding gap is a real constraint. Competition from custom ASICs (Google TPU, Amazon Trainium) and AMD MI-series is intensifying. The upcoming Rubin platform (H2 FY27) must deliver to maintain architecture leadership. Open-source model adoption on competitor platforms is an emerging risk.',
         conclusion: {
-          title: 'Dominant fundamentals at a compressed valuation',
-          text: 'NVIDIA\'s signal picture is strongly positive on fundamentals — record revenue, expanding margins, and massive cash generation. The forward P/E of ~17x is at a seven-year low relative to 70%+ earnings growth, making valuation historically attractive. However, the case carries meaningful risks: export control volatility, extreme customer concentration, and the unprecedented scale of AI infrastructure spending required by customers. The dominant direction is bullish, supported by verified data, but sensitive to geopolitical disruption and any sign of AI capex deceleration.'
+          title: 'Strong fundamentals at a compressed valuation',
+          text: 'Record Q4 revenue of $68.1B (+73% YoY), expanding margins, and $102.7B in operating cash flow make the underlying business clearly stronger than a year ago, while a forward P/E near 17x sits at a seven-year low against 70%+ earnings growth. The most decisive read of the data is clearly positive on fundamentals and unusually favourable on valuation. The key risk is concrete: any step-change in AI capex from a customer base where the top two buyers already represent 36% of revenue, combined with export-control volatility on China.'
         },
         sources: [
           { short: 'SEC', title: '10-K FY2026 Annual Report', subtitle: 'SEC Filing · NVIDIA', href: 'https://finance.yahoo.com/sec-filing/NVDA/0001045810-26-000021_1045810/' },
@@ -1472,12 +1535,18 @@
           title: 'NAV up 14% to SEK 1,087B — board refresh ahead of AGM',
           text: 'Investor AB reported FY2025 adjusted net asset value growth of 14% to SEK 1,087.1B and total shareholder return of 15%. Listed Companies returned 22%, while Patricia Industries returned -9% due to USD weakness. The board proposed a dividend of SEK 5.60/share (+8%). Two board members (Tom Johnstone and Isabelle Kocher) have declined re-election, prompting a refresh ahead of the May 7 AGM. Analysts forecast earnings to decline ~24.7% per year over the next 3 years. The stock trades at 59.6% below Simply Wall St\'s estimated fair value.'
         },
-        drivers: 'Company value is driven by the operational performance of portfolio companies — particularly Atlas Copco, ABB, and Ericsson. Patricia Industries added SEK 24B in acquisitions in 2025, including Vectura\'s acquisition of Goco Health Innovation City (up to SEK 2.9B). Cash at hand was SEK 27B with leverage at 2.1%. Nova Biomedical (60% North America) is a key Patricia subsidiary. The Wallenberg family\'s long-term capital allocation track record is the structural moat.',
+        drivers: [
+          { heading: 'Listed Companies', description: 'Performance of Atlas Copco, ABB and Ericsson drives the bulk of NAV growth.' },
+          { heading: 'Patricia Industries', description: 'Added SEK 24B in 2025 acquisitions including Vectura\'s Goco Health Innovation City deal up to SEK 2.9B.' },
+          { heading: 'Balance-sheet strength', description: 'SEK 27B cash and leverage of 2.1% leave ample room for new portfolio investments.' },
+          { heading: 'Wallenberg track record', description: '108 years of disciplined long-term capital allocation is the structural moat behind the holding.' },
+          { heading: 'FX-sensitive subsidiaries', description: 'Nova Biomedical (60% North America) and other Patricia holdings remain exposed to USD weakness.' }
+        ],
         monShort: 'Q1 2026 interim report (April 21) is the immediate catalyst. Portfolio company results, particularly in the industrial cycle, are key. The AGM on May 7 will reveal the new board composition. Insider buying activity (SEK 707K in March, SEK 4.3M in February) signals management confidence.',
         monLong: 'The long-term case rests on capital allocation discipline across all three business areas (Listed Companies, Patricia Industries, EQT investments). Geopolitical uncertainty and tariff impacts on industrial companies are structural risks. The company achieved its 2030 sustainability target early (scope 1+2 emissions down 74% vs 2016).',
         conclusion: {
-          title: 'Stable compounder trading below estimated fair value',
-          text: 'The signal picture is balanced positive — NAV grew 14%, TSR was 15%, and the dividend increased 8%. The stock trades at a P/B of 1.06x, suggesting limited premium to NAV, and well below historical averages. Insider buying adds a constructive signal. Risk: The earnings decline forecast (-24.7%/year) from analysts reflects macro headwinds, and Patricia Industries\' FX sensitivity (USD weakness) could persist. The dominant direction is cautiously bullish, anchored by the Wallenberg family\'s 108-year track record of long-term value creation.'
+          title: 'Solid compounder priced close to NAV',
+          text: 'Adjusted NAV grew 14% to SEK 1,087B, total shareholder return was 15%, the dividend rose 8% and the stock trades at a P/B of 1.06x — clearly below its historical premium. The most decisive signals — NAV growth, TSR, dividend hike and recent insider buying — give a clearly positive read on the underlying compounding engine. The key risk is Patricia Industries\' USD exposure, which is already weighing on the portfolio, combined with the macro headwinds reflected in the analyst earnings-decline outlook (-24.7%/year over the next three years).'
         },
         sources: [
           { short: 'IR', title: 'FY2025 Earnings Call', subtitle: 'Investor AB', href: 'https://www.investorab.com/' },
@@ -1510,12 +1579,18 @@
           title: 'Wegovy pill launch impresses — but 2026 faces price-driven headwinds',
           text: 'Novo Nordisk\'s Wegovy pill has generated 600,000+ prescriptions since its January launch, with UBS estimating Q1 pill sales of $235M. The company launched Wegovy HD (7.2mg) in the US at $399/month cash-pay. However, 2026 guidance reflects revenue decline (-7.6% est.) due to massive price cuts: ~50% for Wegovy and ~33% for Ozempic in the US. The market cap has fallen from DKK 2.77T (Dec 2024) to DKK 1.07T — a $475B wipeout since Wegovy-era peak. Eli Lilly\'s oral pill Foundayo (orforglipron) launched in April, intensifying competition. Novo claims indirect comparison shows Wegovy pill delivers greater weight loss vs Foundayo, but Foundayo has dosing convenience advantages (no fasting requirement).'
         },
-        drivers: 'Revenue is still driven by Ozempic and Wegovy (combined GLP-1 franchise), with FY2025 revenue of DKK 309B. New catalysts include: Wegovy HD launch, Awiqli (first weekly insulin, FDA-approved March 2026), and CagriSema (FDA application filed despite underwhelming trial data showing 22.7% weight loss vs 25% target). The share repurchase program (DKK 15B over 12 months) provides capital return. However, India patent expiry (March 2025) saw GLP-1 share shift to 33% from low-cost competitors, and Novo cut prices up to 48%. Semaglutide cardiovascular data (47,199 patients, lower mortality at higher doses) supports long-term value.',
+        drivers: [
+          { heading: 'GLP-1 franchise', description: 'Ozempic and Wegovy still anchor revenue, with FY2025 sales of DKK 309B.' },
+          { heading: 'Pipeline catalysts', description: 'Wegovy HD launch, Awiqli weekly-insulin approval and the CagriSema FDA filing are the active near-term drivers.' },
+          { heading: 'Capital return', description: 'A DKK 15B buyback over 12 months underpins shareholder returns.' },
+          { heading: 'Pricing pressure', description: 'Up to ~50% Wegovy and ~33% Ozempic price cuts drive 2026 revenue guidance materially lower.' },
+          { heading: 'Competitive pressure', description: 'Eli Lilly\'s oral GLP-1 Foundayo has launched and is taking share against Novo\'s Wegovy pill.' }
+        ],
         monShort: 'Q1 2026 report (May 6) is the key catalyst — consensus expects DKK 73.2B revenue (-6.3% YoY). Wegovy pill prescription trajectory and Foundayo competitive impact are critical. The Hims & Hers distribution deal (branded Wegovy/Ozempic on telehealth platform) could accelerate volume. CagriSema FDA review timeline is being watched.',
         monLong: 'The long-term case depends on: (1) oral GLP-1 market capture vs Lilly\'s Foundayo and upcoming Viking/Structure pills, (2) rebuilding pipeline confidence after CagriSema disappointment — amycretin (GLP-1 + amylin) is the next-gen hope, (3) navigating the post-patent semaglutide landscape, and (4) the consumer-oriented strategy shift signaled by Mars CEO appointment to the board. Morgan Stanley forecasts the total addressable "diabesity" market at $190B by 2035. TD Cowen downgraded to hold, questioning post-semaglutide visibility.',
         conclusion: {
-          title: 'Deep value emerging, but structural risks persist',
-          text: 'The signal picture is mixed but improving. The stock trades at a trailing P/E of 10.5x and forward P/E of 11.1x — historically cheap for a company with 44.5% operating margins and 60.7% ROE. The 6.6% forward dividend yield provides downside support. Positive signals: strong Wegovy pill launch, Awiqli approval, DKK 15B buyback, and emerging cardiovascular data for semaglutide. Negative signals: 2026 revenue guidance declining, CagriSema underperformance, semaglutide patent cliff approaching, and Eli Lilly\'s competitive pressure. Norway\'s sovereign wealth fund abstained on the chairman vote, flagging governance concerns. The dominant direction is cautiously neutral — the valuation compression has created potential opportunity, but the company must prove its next-generation pipeline can sustain growth beyond semaglutide.'
+          title: 'Deep value with a split operating picture',
+          text: 'The most decisive signals run in two directions at once: a trailing P/E of 10.5x, 44.5% operating margins, the DKK 15B buyback, and the Wegovy pill / Awiqli approvals are clearly positive, while the 2026 revenue-decline guidance, CagriSema\'s miss against its 25% weight-loss target, and Eli Lilly\'s Foundayo launch are clearly negative. The 6.6% forward dividend yield provides concrete downside support. The data does not yet show whether the next-generation pipeline (amycretin, oral pills) can replace semaglutide before the patent cliff, with governance concerns from Norway\'s sovereign-wealth fund adding pressure on top.'
         },
         sources: [
           { short: 'SEC', title: '20-F Annual Report FY2025', subtitle: 'SEC Filing · Novo Nordisk', href: 'https://finance.yahoo.com/quote/NVO/profile/' },
@@ -1595,12 +1670,19 @@
       const v = verdictMap[(data.verdict || 'mixed').toLowerCase()] || verdictMap.mixed;
 
       const metrics = Array.isArray(data.key_metrics) ? data.key_metrics : [];
-      const metricsHtml = metrics.map(m => `
+      const metricsHtml = metrics.map(m => {
+        const comp = (m.comparison || '').trim();
+        const compHtml = comp
+          ? `<div class="report-metric-comparison">${escapeHtml(comp)}</div>`
+          : '';
+        return `
         <div class="report-metric-card">
           <div class="report-metric-label">${escapeHtml(m.label || '')}</div>
           <div class="report-metric-value">${escapeHtml(m.value || '')}</div>
+          ${compHtml}
           <div class="report-metric-interp">${escapeHtml(m.interpretation || '')}</div>
-        </div>`).join('');
+        </div>`;
+      }).join('');
 
       const positives = Array.isArray(data.positives) ? data.positives : [];
       const concerns  = Array.isArray(data.concerns)  ? data.concerns  : [];
@@ -1729,6 +1811,33 @@
         .replace(/'/g, '&#39;');
     }
 
+    function renderDrivers(drivers) {
+      const list = document.getElementById('drivers-list');
+      list.innerHTML = '';
+
+      // Defensive: support legacy string fallback in case the backend returns
+      // an old-shape payload. New shape is a list of {heading, description}.
+      if (typeof drivers === 'string') {
+        const li = document.createElement('li');
+        li.innerHTML = `<span class="driver-desc">${escapeHtml(drivers)}</span>`;
+        list.appendChild(li);
+        return;
+      }
+      if (!Array.isArray(drivers)) return;
+
+      drivers.forEach((d) => {
+        const heading = (d && d.heading) || '';
+        const desc = (d && d.description) || '';
+        if (!heading && !desc) return;
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <span class="driver-heading">${escapeHtml(heading)}</span>
+          <span class="driver-desc">${escapeHtml(desc)}</span>
+        `;
+        list.appendChild(li);
+      });
+    }
+
     function renderSources(sources) {
       const grid = document.getElementById('sourcesGrid');
       grid.innerHTML = '';
@@ -1820,7 +1929,8 @@
       document.getElementById('wm-title').textContent = d.wm.title;
       document.getElementById('wm-text').textContent = d.wm.text;
 
-      document.getElementById('drivers-text').textContent = d.drivers;
+      document.getElementById('drivers-list').replaceChildren();
+      renderDrivers(d.drivers);
       document.getElementById('mon-short').textContent = d.monShort;
       document.getElementById('mon-long').textContent = d.monLong;
 
