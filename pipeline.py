@@ -86,7 +86,9 @@ async def run_pipeline_full(query: str, language: str = "english") -> tuple:
             generated_at=data.collected_at,
             sections={
                 "what_matters_now": "No actionable signals detected for this asset in the current data window.",
-                "drivers": "Insufficient signal data to identify current drivers.",
+                "drivers": [
+                    {"heading": "No drivers detected", "description": "Insufficient signal data to identify current drivers."}
+                ],
                 "monitoring": "Continue monitoring for new earnings reports, guidance changes, or material events.",
                 "conclusion": "Signal landscape is quiet. No clear directional bias from current data.",
             },
@@ -162,7 +164,9 @@ async def run_pipeline(query: str, language: str = "english") -> PipelineRespons
             generated_at=data.collected_at,
             sections={
                 "what_matters_now": "No actionable signals detected for this asset in the current data window.",
-                "drivers": "Insufficient signal data to identify current drivers.",
+                "drivers": [
+                    {"heading": "No drivers detected", "description": "Insufficient signal data to identify current drivers."}
+                ],
                 "monitoring": "Continue monitoring for new earnings reports, guidance changes, or material events.",
                 "conclusion": "Signal landscape is quiet. No clear directional bias from current data.",
             },
