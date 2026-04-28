@@ -104,6 +104,7 @@ async def summarize_report(
                 metrics.append(ReportMetric(
                     label=label,
                     value=str(m.get("value", "")).strip(),
+                    comparison=str(m.get("comparison", "")).strip(),
                     interpretation=str(m.get("interpretation", "")).strip(),
                 ))
 
