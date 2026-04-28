@@ -114,9 +114,17 @@ class ScoredSignal(BaseModel):
 
 # -- Step 7 --
 
+class DriverItem(BaseModel):
+    """A single value driver – heading + one short sentence. Designed for
+    skim-readability: the frontend renders these as a structured list.
+    """
+    heading: str
+    description: str
+
+
 class Sections(BaseModel):
     what_matters_now: str
-    drivers: str
+    drivers: list[DriverItem]
     monitoring: str
     conclusion: str
 
@@ -171,6 +179,9 @@ class PipelineRequest(BaseModel):
 class ReportMetric(BaseModel):
     label: str
     value: str
+    # Prior-period figure with delta, e.g. "$39.3B in Q4 FY25 (+73% YoY)".
+    # Empty string when the report does not contain a comparable prior figure.
+    comparison: str = ""
     interpretation: str
 
 
