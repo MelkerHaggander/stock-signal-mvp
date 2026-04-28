@@ -1274,6 +1274,57 @@
       .report-summary-section { padding: 20px; }
       .report-headline { font-size: 22px; }
       .report-lists { grid-template-columns: 1fr; gap: 16px; }
+      /* Hero — stack name and ticker so they don't wrap awkwardly on
+         narrow screens, and bring the headline down a notch. */
+      .hero { padding: 18px 0; gap: 12px; }
+      .hero h1 { font-size: 28px; line-height: 1.05; }
+      .hero h1 .ticker {
+        display: block;
+        font-size: 15px;
+        margin-left: 0;
+        margin-top: 6px;
+      }
+      .hero-tagline { font-size: 13px; }
+      .current-price { font-size: 28px; }
+
+      /* Conclusion — the dark gradient panel needs less padding to feel
+         balanced against the narrower viewport. */
+      .conclusion-section { padding: 22px; }
+
+      /* Pills — slightly more compact so all three fit comfortably
+         without forcing a horizontal scroll on common phone widths. */
+      .pill { padding: 6px 11px; gap: 6px; font-size: 11.5px; }
+      .pill-ticker { font-size: 9.5px; }
+
+      /* Soften step and intro typography on mobile. */
+      .step { padding: 18px; }
+      .step h3 { font-size: 17px; }
+      .intro-lead { font-size: 14.5px; line-height: 1.55; }
+    }
+
+    /* Small phones (≤ 400px) — tighten paddings and type one more
+       notch so iPhone-SE-class devices don't feel cramped. */
+    @media (max-width: 400px) {
+      .navbar { padding: 9px 12px; }
+      .container { padding: 16px 12px 60px; }
+
+      .intro-hero h1 { font-size: 26px; line-height: 1.08; }
+      .hero h1 { font-size: 24px; }
+      .hero h1 .ticker { font-size: 14px; }
+      .current-price { font-size: 24px; }
+
+      .card { padding: 16px; }
+      .signal-section { padding: 16px; }
+      .signal-section h2 { font-size: 20px; }
+      .conclusion-section { padding: 18px; }
+      .conclusion-section h2 { font-size: 20px; }
+
+      .step { padding: 16px; }
+      .company-card { padding: 16px; }
+      .company-card-name { font-size: 18px; }
+
+      .report-summary-section { padding: 16px; }
+      .report-headline { font-size: 20px; }
     }
   </style>
 </head>
@@ -1949,9 +2000,16 @@
       'NOVO-B': 'Novo Nordisk',
     };
 
-    async function loadStock(ticker) {
+   async function loadStock(ticker) {
       const displayName = TICKER_DISPLAY_NAMES[ticker] || ticker;
       setStatus(`Loading ${displayName} (${ticker})…`, 'loading');
+
+      // Scroll to the top so the loading banner and the new analysis
+      // become immediately visible — otherwise a user who triggers a
+      // new analysis while scrolled deep in the previous one would
+      // not see that anything had changed.
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+
       const d = await fetchStockData(ticker);
 
       if (!d) {
