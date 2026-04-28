@@ -11,7 +11,7 @@ from datetime import datetime
 
 import anthropic
 
-from models import NormalizedData, ScoredSignal, SynthesizedOutput, Sections
+from models import NormalizedData, ScoredSignal, SynthesizedOutput, Sections, DriverItem
 from prompts import SYNTHESIS_SYSTEM_PROMPT, SYNTHESIS_USER_TEMPLATE
 
 logger = logging.getLogger(__name__)
@@ -22,6 +22,32 @@ _TEMPERATURE = 0.2
 _MAX_RETRIES = 2
 _RETRY_BASE_DELAY = 2.0  # seconds – doubles each retry (2 s, 4 s)
 _TOP_N = 10  # max signals sent to synthesis
+
+
+def _parse_drivers(raw) -> list[DriverItem]:
+    """Coerce the model's drivers output into a list[DriverItem].
+
+    The current contract is a list of {heading, description} objects. We also
+    tolerate a string fallback (legacy shape or model deviation) by wrapping
+    it in a single item, so the pipeline never breaks on a borderline response.
+    """
+    if isinstance(raw, list):
+        items: list[DriverItem] = []
+        for entry in raw:
+            if not isinstance(entry, dict):
+                continue
+            heading = str(entry.get("heading", "")).strip()
+            description = str(entry.get("description", "")).strip()
+            if not heading and not description:
+                continue
+            items.append(DriverItem(
+                heading=heading or "Driver",
+                description=description,
+            ))
+        return items
+    if isinstance(raw, str) and raw.strip():
+        return [DriverItem(heading="Drivers", description=raw.strip())]
+    return []
 
 
 async def synthesize(
@@ -60,10 +86,18 @@ async def synthesize(
             raw = raw.removeprefix("```json").removeprefix("```").removesuffix("```").strip()
             parsed = json.loads(raw)
 
+            sections_raw = parsed["sections"]
+            sections = Sections(
+                what_matters_now=str(sections_raw.get("what_matters_now", "")).strip(),
+                drivers=_parse_drivers(sections_raw.get("drivers")),
+                monitoring=str(sections_raw.get("monitoring", "")).strip(),
+                conclusion=str(sections_raw.get("conclusion", "")).strip(),
+            )
+
             return SynthesizedOutput(
                 symbol=parsed["symbol"],
                 generated_at=parsed["generated_at"],
-                sections=Sections(**parsed["sections"]),
+                sections=sections,
                 signal_ids_used=parsed.get("signal_ids_used", []),
             )
         except (json.JSONDecodeError, KeyError) as exc:
