@@ -175,6 +175,16 @@ def build_frontend_payload(
     mon_short, mon_long = _split_monitoring(sec.monitoring)
     conc_title, conc_text = _extract_title_and_body(sec.conclusion)
 
+    # Drivers: structured list of {heading, description} for skim-readable
+    # rendering on the frontend.
+    drivers_payload = [
+        {
+            "heading": d.heading,
+            "description": d.description,
+        }
+        for d in sec.drivers
+    ]
+
     # Sources from pipeline signals
     sources = []
     for src in response.sources:
@@ -220,7 +230,7 @@ def build_frontend_payload(
             "title": wm_title,
             "text": wm_text,
         },
-        "drivers": sec.drivers,
+        "drivers": drivers_payload,
         "monShort": mon_short,
         "monLong": mon_long,
         "conclusion": {
