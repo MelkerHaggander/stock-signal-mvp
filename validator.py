@@ -11,6 +11,20 @@ from models import ScoredSignal, SynthesizedOutput, ValidationResult, Validation
 _REQUIRED_SECTIONS = ["what_matters_now", "drivers", "monitoring", "conclusion"]
 
 
+def _section_is_empty(value) -> bool:
+    """A section is empty if it's None, an empty/whitespace string, or an
+    empty list. The drivers section is a list[DriverItem]; everything else
+    is a string in the current schema.
+    """
+    if value is None:
+        return True
+    if isinstance(value, list):
+        return len(value) == 0
+    if isinstance(value, str):
+        return not value.strip()
+    return False
+
+
 def validate(
     output: SynthesizedOutput,
     scored_signals: list[ScoredSignal],
@@ -24,7 +38,7 @@ def validate(
     # 1. Structural: all sections present and non-empty
     for section in _REQUIRED_SECTIONS:
         val = getattr(output.sections, section, None)
-        if not val or not val.strip():
+        if _section_is_empty(val):
             flags.append(f"empty_section:{section}")
 
     # 2. Signal-ID traceability
